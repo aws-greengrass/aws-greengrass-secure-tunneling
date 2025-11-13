@@ -1,0 +1,2 @@
+- symbol: ["pthread_mutex_t", "private", "<sys/types.h>", "public"]
+- symbol: ["pthread_t", "private", "<sys/types.h>", "public"]
