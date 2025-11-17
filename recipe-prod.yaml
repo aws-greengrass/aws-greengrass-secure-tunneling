@@ -1,0 +1,100 @@
+---
+RecipeFormatVersion: "2020-01-25"
+ComponentName: "aws.greengrass.SecureTunneling"
+ComponentVersion: "3.0.0"
+ComponentType: "aws.greengrass.generic"
+ComponentDescription:
+  "Enables AWS IoT Secure Tunneling connections that you can use to establish
+  secure bidirectional communications with Greengrass core devices that are
+  behind restricted firewalls."
+ComponentPublisher: "AWS"
+ComponentConfiguration:
+  DefaultConfiguration:
+    maxConcurrentTunnels: 20
+    tunnelTimeoutSeconds: 43200
+    accessControl:
+      aws.greengrass.ipc.mqttproxy:
+        "aws.greengrass.SecureTunneling:mqttproxy:1":
+          policyDescription: "Access to tunnel notification pubsub topic"
+          operations:
+            - "aws.greengrass#SubscribeToIoTCore"
+          resources:
+            - "$aws/things/+/tunnels/notify"
+    OS_DIST_INFO: "auto"
+Manifests:
+  - Platform:
+      os: "linux"
+      runtime: "*"
+      architecture: "amd64"
+    Lifecycle:
+      run:
+        Script:
+          "{artifacts:path}/secure-tunnel --thing-name {iot:thingName}
+          --max-tunnels {configuration:/maxConcurrentTunnels} --timeout
+          {configuration:/tunnelTimeoutSeconds} --artifact-path {artifacts:path}"
+    Artifacts:
+      - Uri: "s3://BUCKET_NAME/COMPONENT_NAME/COMPONENT_VERSION/secure-tunnel"
+        Unarchive: "NONE"
+        Permission:
+          Read: "OWNER"
+          Execute: "OWNER"
+      - Uri: "s3://BUCKET_NAME/COMPONENT_NAME/COMPONENT_VERSION/localproxy"
+        Unarchive: "NONE"
+        Permission:
+          Read: "OWNER"
+          Execute: "OWNER"
+    Artifacts:
+      - Uri: "s3://BUCKET_NAME/COMPONENT_NAME/COMPONENT_VERSION/secure-tunnel"
+        Unarchive: "NONE"
+        Permission:
+          Read: "OWNER"
+          Execute: "OWNER"
+      - Uri: "s3://BUCKET_NAME/COMPONENT_NAME/COMPONENT_VERSION/localproxy"
+        Unarchive: "NONE"
+        Permission:
+          Read: "OWNER"
+          Execute: "OWNER"
+  - Platform:
+      os: "linux"
+      runtime: "*"
+      architecture: "aarch64"
+    Lifecycle:
+      run:
+        Script:
+          "{artifacts:path}/secure-tunnel --thing-name {iot:thingName}
+          --max-tunnels {configuration:/maxConcurrentTunnels} --timeout
+          {configuration:/tunnelTimeoutSeconds} --artifact-path {artifacts:path}"
+    Artifacts:
+      - Uri: "s3://BUCKET_NAME/COMPONENT_NAME/COMPONENT_VERSION/secure-tunnel"
+        Unarchive: "NONE"
+        Permission:
+          Read: "OWNER"
+          Execute: "OWNER"
+      - Uri: "s3://BUCKET_NAME/COMPONENT_NAME/COMPONENT_VERSION/localproxy"
+        Unarchive: "NONE"
+        Permission:
+          Read: "OWNER"
+          Execute: "OWNER"
+  - Platform:
+      os: "linux"
+      runtime: "*"
+      architecture.detail: "armv7l"
+      architecture: "arm"
+    Lifecycle:
+      run:
+        Script:
+          "{artifacts:path}/secure-tunnel --thing-name {iot:thingName}
+          --max-tunnels {configuration:/maxConcurrentTunnels} --timeout
+          {configuration:/tunnelTimeoutSeconds} --artifact-path {artifacts:path}"
+    Artifacts:
+      - Uri: "s3://BUCKET_NAME/COMPONENT_NAME/COMPONENT_VERSION/secure-tunnel"
+        Unarchive: "NONE"
+        Permission:
+          Read: "OWNER"
+          Execute: "OWNER"
+      - Uri: "s3://BUCKET_NAME/COMPONENT_NAME/COMPONENT_VERSION/localproxy"
+        Unarchive: "NONE"
+        Permission:
+          Read: "OWNER"
+          Execute: "OWNER"
+Lifecycle: {}
