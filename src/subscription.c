@@ -8,9 +8,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "gg/json_decode.h"
-#include "gg/log.h"
-#include "gg/utils.h"
 #include "secure-tunnel.h"
 #include "subscriptions.h"
 #include "tunnel.h"
@@ -18,7 +15,10 @@
 #include <gg/buffer.h>
 #include <gg/error.h>
 #include <gg/ipc/client.h>
+#include <gg/json_decode.h>
+#include <gg/log.h>
 #include <gg/object.h>
+#include <gg/utils.h>
 #include <gg/vector.h>
 #include <stdbool.h>
 #include <stdint.h>

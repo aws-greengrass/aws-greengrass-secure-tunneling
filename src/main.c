@@ -8,11 +8,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "gg/log.h"
 #include "secure-tunnel.h"
 #include <argp.h>
 #include <gg/buffer.h>
 #include <gg/error.h>
+#include <gg/log.h>
 #include <gg/sdk.h>
 #include <stdio.h>
 #include <stdlib.h>

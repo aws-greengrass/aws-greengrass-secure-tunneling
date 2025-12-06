@@ -9,9 +9,9 @@
  */
 
 #include "secure-tunnel.h"
-#include "gg/log.h"
 #include "subscriptions.h"
 #include <gg/error.h>
+#include <gg/log.h>
 
 GgError run_secure_tunnel(const SecureTunnelConfig *config) {
     GgError ret = subscribe_to_aws_tunnel_tokens(config);
