@@ -218,7 +218,7 @@ target_compile_definitions(
   aws-greengrass-secure-tunnel
   PRIVATE "GG_MODULE=(\"aws-greengrass-secure-tunnel\")")
 
-target_include_directories(aws-greengrass-secure-tunnel PRIVATE include)
+target_include_directories(aws-greengrass-secure-tunnel PRIVATE include src)
 
 target_link_libraries(aws-greengrass-secure-tunnel PRIVATE gg-sdk)
 

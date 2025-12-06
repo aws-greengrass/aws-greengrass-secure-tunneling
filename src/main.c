@@ -1,0 +1,120 @@
+/*
+ * aws.greengrass.SecureTunneling - AWS Greengrass component for secure
+ * tunneling to IoT devices using AWS IoT Device Management Secure Tunneling
+ * service.
+ *
+ * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "gg/log.h"
+#include "secure-tunnel.h"
+#include <argp.h>
+#include <gg/buffer.h>
+#include <gg/error.h>
+#include <gg/sdk.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#define DEFAULT_MAX_CONCURRENT_TUNNELS 20
+#define DEFAULT_TUNNEL_TIMEOUT_SECONDS 43200 // 12 hours
+
+static char doc[]
+    = "secure-tunnel -- AWS Greengrass Secure Tunneling component";
+
+static struct argp_option opts[] = {
+    { "thing-name", 't', "name", 0, "Thing name", 0 },
+    { "region", 'r', "region", 0, "AWS region", 0 },
+    { "max-tunnels", 'm', "count", 0, "Maximum concurrent tunnels", 0 },
+    { "timeout", 'T', "seconds", 0, "Tunnel timeout in seconds", 0 },
+    { "artifact-path", 'a', "path", 0, "Path to aws-local-proxy binary", 0 },
+    { "version", 'v', 0, 0, "Show version information", 0 },
+    { 0 }
+};
+
+static error_t arg_parser(int key, char *arg, struct argp_state *state) {
+    SecureTunnelConfig *args = state->input;
+    switch (key) {
+    case 't':
+        args->thing_name = gg_buffer_from_null_term(arg);
+        break;
+    case 'r':
+        args->region = gg_buffer_from_null_term(arg);
+        break;
+    case 'm':
+        args->max_concurrent_tunnels = atoi(arg);
+        break;
+    case 'T':
+        args->tunnel_timeout_seconds = atoi(arg);
+        break;
+    case 'a':
+        args->artifact_path = gg_buffer_from_null_term(arg);
+        break;
+    case 'v':
+        printf(SEC_TUN_VERSION "\n");
+
+        // NOLINTNEXTLINE(concurrency-mt-unsafe)
+        exit(0);
+        break;
+    case ARGP_KEY_END:
+        // Try to get region from environment if not provided via args
+        if (args->region.len == 0) {
+            // NOLINTNEXTLINE(concurrency-mt-unsafe)
+            char *env_region = getenv("AWS_REGION");
+            if (env_region != NULL) {
+                args->region = gg_buffer_from_null_term(env_region);
+            } else {
+                GG_LOGE("Error: region is required");
+                // NOLINTNEXTLINE(concurrency-mt-unsafe)
+                argp_usage(state);
+            }
+        }
+
+        if (args->thing_name.len == 0 || args->region.len == 0
+            || args->artifact_path.len == 0) {
+            GG_LOGE("Error: thingName and local proxy paths are required");
+
+            // NOLINTNEXTLINE(concurrency-mt-unsafe)
+            argp_usage(state);
+        }
+
+        // Set Defaults
+        if (args->max_concurrent_tunnels == 0) {
+            args->max_concurrent_tunnels = DEFAULT_MAX_CONCURRENT_TUNNELS;
+        }
+        if (args->tunnel_timeout_seconds == 0) {
+            args->tunnel_timeout_seconds = DEFAULT_TUNNEL_TIMEOUT_SECONDS;
+        }
+
+        break;
+    default:
+        return ARGP_ERR_UNKNOWN;
+    }
+    return 0;
+}
+
+static struct argp argp = { opts, arg_parser, 0, doc, 0, 0, 0 };
+
+int main(int argc, char *argv[]) {
+    static SecureTunnelConfig args = { 0 };
+
+    // NOLINTNEXTLINE(concurrency-mt-unsafe)
+    argp_parse(&argp, argc, argv, 0, 0, &args);
+
+    gg_sdk_init();
+
+    GG_LOGI("Starting Secure Tunnel component");
+    GG_LOGI(
+        "Thing name: %.*s", (int) args.thing_name.len, args.thing_name.data
+    );
+    GG_LOGI("Max concurrent tunnels: %d", args.max_concurrent_tunnels);
+    GG_LOGI("Tunnel timeout: %d seconds", args.tunnel_timeout_seconds);
+
+    if (run_secure_tunnel(&args) != GG_ERR_OK) {
+        GG_LOGE("Failed to run secure tunnel");
+        return 1;
+    }
+
+    return 0;
+}

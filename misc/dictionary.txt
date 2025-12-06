@@ -39,6 +39,7 @@ mqttproxy
 nodlopen
 noexecstack
 NOLINTNEXTLINE
+PDEATHSIG
 pthread
 relro
 RELWITHDEBINFO
