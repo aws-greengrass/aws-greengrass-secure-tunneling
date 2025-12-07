@@ -33,6 +33,42 @@ static struct argp_option opts[] = {
     { 0 }
 };
 
+static inline void set_config_defaults(SecureTunnelConfig *config) {
+    if (config->max_concurrent_tunnels == 0) {
+        config->max_concurrent_tunnels = DEFAULT_MAX_CONCURRENT_TUNNELS;
+    }
+    if (config->tunnel_timeout_seconds == 0) {
+        config->tunnel_timeout_seconds = DEFAULT_TUNNEL_TIMEOUT_SECONDS;
+    }
+}
+
+static inline void validate_required_fields(
+    SecureTunnelConfig *config, struct argp_state *state
+) {
+    if (config->region.len == 0) {
+        // NOLINTNEXTLINE(concurrency-mt-unsafe)
+        char *env_region = getenv("AWS_REGION");
+        if (env_region != NULL) {
+            config->region = gg_buffer_from_null_term(env_region);
+        } else {
+            GG_LOGE("Error: region is required");
+            // NOLINTNEXTLINE(concurrency-mt-unsafe)
+            argp_usage(state);
+            // NOLINTNEXTLINE(concurrency-mt-unsafe)
+            exit(1);
+        }
+    }
+
+    if (config->thing_name.len == 0 || config->region.len == 0
+        || config->artifact_path.len == 0) {
+        GG_LOGE("Error: thingName and local proxy paths are required");
+        // NOLINTNEXTLINE(concurrency-mt-unsafe)
+        argp_usage(state);
+        // NOLINTNEXTLINE(concurrency-mt-unsafe)
+        exit(1);
+    }
+}
+
 static error_t arg_parser(int key, char *arg, struct argp_state *state) {
     SecureTunnelConfig *args = state->input;
     switch (key) {
@@ -58,33 +94,16 @@ static error_t arg_parser(int key, char *arg, struct argp_state *state) {
         exit(0);
         break;
     case ARGP_KEY_END:
-        // Try to get region from environment if not provided via args
-        if (args->region.len == 0) {
+        validate_required_fields(args, state);
+        set_config_defaults(args);
+
+        if (args->max_concurrent_tunnels > 20) {
+            GG_LOGE(
+                "Error: maxConcurrentTunnels cannot exceed 20 (provided: %d)",
+                args->max_concurrent_tunnels
+            );
             // NOLINTNEXTLINE(concurrency-mt-unsafe)
-            char *env_region = getenv("AWS_REGION");
-            if (env_region != NULL) {
-                args->region = gg_buffer_from_null_term(env_region);
-            } else {
-                GG_LOGE("Error: region is required");
-                // NOLINTNEXTLINE(concurrency-mt-unsafe)
-                argp_usage(state);
-            }
-        }
-
-        if (args->thing_name.len == 0 || args->region.len == 0
-            || args->artifact_path.len == 0) {
-            GG_LOGE("Error: thingName and local proxy paths are required");
-
-            // NOLINTNEXTLINE(concurrency-mt-unsafe)
-            argp_usage(state);
-        }
-
-        // Set Defaults
-        if (args->max_concurrent_tunnels == 0) {
-            args->max_concurrent_tunnels = DEFAULT_MAX_CONCURRENT_TUNNELS;
-        }
-        if (args->tunnel_timeout_seconds == 0) {
-            args->tunnel_timeout_seconds = DEFAULT_TUNNEL_TIMEOUT_SECONDS;
+            exit(1);
         }
 
         break;
