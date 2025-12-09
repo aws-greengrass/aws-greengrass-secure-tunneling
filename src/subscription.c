@@ -18,9 +18,7 @@
 #include <gg/json_decode.h>
 #include <gg/log.h>
 #include <gg/object.h>
-#include <gg/utils.h>
 #include <gg/vector.h>
-#include <stdbool.h>
 #include <stdint.h>
 
 static void on_tunnel_notification(
@@ -56,16 +54,23 @@ static void on_tunnel_notification(
     }
 }
 
+static GgError build_tunnel_topic(
+    const SecureTunnelConfig *config, GgByteVec *topic
+) {
+    if (config->thing_name.len == 0) {
+        return GG_ERR_INVALID;
+    }
+    GgError ret = gg_byte_vec_append(topic, GG_STR("$aws/things/"));
+    gg_byte_vec_chain_append(&ret, topic, config->thing_name);
+    gg_byte_vec_chain_append(&ret, topic, GG_STR("/tunnels/notify"));
+    return ret;
+}
+
 GgError subscribe_to_aws_tunnel_tokens(const SecureTunnelConfig *config) {
     uint8_t topic_memory[256];
     GgByteVec tunnel_token_sub_topic = GG_BYTE_VEC(topic_memory);
 
-    GgError ret
-        = gg_byte_vec_append(&tunnel_token_sub_topic, GG_STR("$aws/things/"));
-    gg_byte_vec_chain_append(&ret, &tunnel_token_sub_topic, config->thing_name);
-    gg_byte_vec_chain_append(
-        &ret, &tunnel_token_sub_topic, GG_STR("/tunnels/notify")
-    );
+    GgError ret = build_tunnel_topic(config, &tunnel_token_sub_topic);
     if (ret != GG_ERR_OK) {
         return ret;
     }

@@ -22,13 +22,16 @@ ftrivial
 fvisibility
 ggdb
 ggipc
+GLIBCXX
 greengrass
 INTERPROCEDURAL
 iwyu
 journalctl
+libc
 LIBDIR
 libprotobuf
 libpthread
+libstdc
 localproxy
 LOGD
 LOGE
