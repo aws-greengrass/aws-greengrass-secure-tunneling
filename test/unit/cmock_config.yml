@@ -1,0 +1,23 @@
+:cmock:
+  :mock_prefix: Mock
+  :when_no_prototypes: :warn
+  :enforce_strict_ordering: true
+  :plugins:
+    - :ignore
+    - :callback
+    - :return_thru_ptr
+  :treat_as:
+    uint8: HEX8
+    uint16: HEX16
+    uint32: UINT32
+    int8: INT8
+    bool: UINT8
+  :includes:
+    - <gg/buffer.h>
+    - <gg/error.h>
+    - <gg/object.h>
+  :strippables:
+    - '(?:GG_EXPORT\s+)'
+    - '(?:#ifdef GG_TEST_MODE[\s\S]*?#endif)'
+  :treat_as_void:
+    - test_on_tunnel_notification
