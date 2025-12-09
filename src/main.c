@@ -135,5 +135,11 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    // Keep subscription alive
+    GG_LOGI("Secure tunnel running, waiting for notifications...");
+    while (true) {
+        (void) gg_sleep(60);
+    }
+
     return 0;
 }
