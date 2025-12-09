@@ -14,6 +14,8 @@
 #include <gg/error.h>
 #include <gg/log.h>
 #include <gg/sdk.h>
+#include <gg/utils.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -78,12 +80,24 @@ static error_t arg_parser(int key, char *arg, struct argp_state *state) {
     case 'r':
         args->region = gg_buffer_from_null_term(arg);
         break;
-    case 'm':
-        args->max_concurrent_tunnels = atoi(arg);
+    case 'm': {
+        int val = atoi(arg);
+        if (val <= 0) {
+            GG_LOGE("Error: max-tunnels must be a positive integer");
+            return ARGP_ERR_UNKNOWN;
+        }
+        args->max_concurrent_tunnels = val;
         break;
-    case 'T':
-        args->tunnel_timeout_seconds = atoi(arg);
+    }
+    case 'T': {
+        int val = atoi(arg);
+        if (val <= 0) {
+            GG_LOGE("Error: timeout must be a positive integer");
+            return ARGP_ERR_UNKNOWN;
+        }
+        args->tunnel_timeout_seconds = val;
         break;
+    }
     case 'a':
         args->artifact_path = gg_buffer_from_null_term(arg);
         break;
