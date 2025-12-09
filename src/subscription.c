@@ -96,10 +96,5 @@ GgError subscribe_to_aws_tunnel_tokens(const SecureTunnelConfig *config) {
     }
 
     GG_LOGI("Successfully subscribed to tunnel notifications");
-
-    while (true) {
-        (void) gg_sleep((60));
-    }
-
     return GG_ERR_OK;
 }
