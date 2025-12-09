@@ -9,6 +9,8 @@ cmake_minimum_required(VERSION 3.22)
 project(aws-greengrass-secure-tunnel C)
 
 option(ENABLE_WERROR "Compile warnings as errors")
+option(BUILD_TESTING "Build tests" OFF)
+option(ENABLE_COVERAGE "Enable code coverage" OFF)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -139,6 +141,12 @@ add_compile_definitions("SEC_TUN_VERSION=\"${SEC_TUN_VERSION}\"")
 add_compile_definitions(_GNU_SOURCE)
 add_compile_definitions($<$<NOT:$<CONFIG:Debug>>:_FORTIFY_SOURCE=3>)
 
+# Coverage flags
+if(ENABLE_COVERAGE)
+  add_compile_options(--coverage -fprofile-arcs -ftest-coverage)
+  add_link_options(--coverage)
+endif()
+
 add_link_options($<$<NOT:$<CONFIG:Debug>>:-pie>)
 
 add_link_options(
@@ -227,3 +235,12 @@ if(NOT has_argp)
 endif()
 
 install(TARGETS aws-greengrass-secure-tunnel)
+
+#
+# Testing
+#
+
+if(BUILD_TESTING)
+  enable_testing()
+  add_subdirectory(test)
+endif()

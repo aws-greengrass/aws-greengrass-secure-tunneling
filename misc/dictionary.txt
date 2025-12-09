@@ -3,6 +3,8 @@ armv7
 BINDIR
 cflag
 cflags
+cmock
+ctest
 DBUILD
 DCMAKE
 DEPENDS
