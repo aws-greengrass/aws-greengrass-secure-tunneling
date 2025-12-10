@@ -14,3 +14,17 @@ target_link_libraries(test_integration_error_handling
                       PRIVATE unity test_helpers gg-sdk)
 add_test(NAME test_integration_error_handling
          COMMAND test_integration_error_handling)
+
+add_executable(
+  test_integration_subscription
+  ${CMAKE_SOURCE_DIR}/src/subscription.c ${CMAKE_SOURCE_DIR}/src/tunnel.c
+  ${CMAKE_SOURCE_DIR}/src/tunnel_notification_parser.c test_subscription.c)
+target_include_directories(
+  test_integration_subscription PRIVATE ${CMAKE_SOURCE_DIR}/src
+                                        ${CMAKE_SOURCE_DIR}/include)
+target_compile_definitions(test_integration_subscription
+                           PRIVATE "GG_MODULE=(\"test_subscription\")")
+target_link_libraries(test_integration_subscription PRIVATE ipc_mock unity
+                                                            gg-sdk m)
+add_test(NAME test_integration_subscription
+         COMMAND test_integration_subscription)

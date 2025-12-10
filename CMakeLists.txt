@@ -145,6 +145,7 @@ add_compile_definitions($<$<NOT:$<CONFIG:Debug>>:_FORTIFY_SOURCE=3>)
 if(ENABLE_COVERAGE)
   add_compile_options(--coverage -fprofile-arcs -ftest-coverage)
   add_link_options(--coverage)
+  add_compile_definitions(ENABLE_COVERAGE)
 endif()
 
 add_link_options($<$<NOT:$<CONFIG:Debug>>:-pie>)
