@@ -11,6 +11,7 @@ DEPENDS
 endforeach
 endif
 endmacro
+epollfd
 fdata
 FETCHCONTENT
 fexecve
@@ -40,6 +41,7 @@ LOGT
 LOGW
 makeavailable
 MINSIZEREL
+mqtt
 mqttproxy
 nodlopen
 noexecstack
@@ -51,6 +53,7 @@ RELWITHDEBINFO
 RPATH
 securetunneling
 SRCS
+SVCUID
 tunneling
 unstrippable
 Wbidi

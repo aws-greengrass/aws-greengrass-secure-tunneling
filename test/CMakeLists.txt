@@ -38,4 +38,5 @@ target_link_libraries(test_helpers PUBLIC unity cmock gg-sdk)
 
 # Add subdirectories
 add_subdirectory(unit)
+add_subdirectory(ipc_mock)
 add_subdirectory(integration)
