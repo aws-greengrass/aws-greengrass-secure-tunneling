@@ -32,8 +32,8 @@ For configuration options, see [Configuration](docs/configuration.md).
 | Component                    | Binary Size | Memory  |
 | ---------------------------- | ----------- | ------- |
 | aws-greengrass-secure-tunnel | 69 KB       | ~140 KB |
-| localproxy                   |             |         |
-| **Total**                    |             |         |
+| localproxy                   | 3.9 MB      | ~2.2 MB |
+| **Total**                    | ~4.0 MB     | ~2.3 MB |
 
 _Note: Measurements are for MinSizeRel builds. Memory values represent
 unique/private memory (RssAnon). Shared libraries and file-backed memory are not
@@ -41,30 +41,17 @@ included in these measurements._
 
 ## Runtime Dependencies
 
-### aws-greengrass-secure-tunnel
-
-| Library | Minimum Version |
-| ------- | --------------- |
-| glibc   | 2.38            |
-
-Install on Ubuntu:
-
-```bash
-sudo apt install libc6
-```
-
-### localproxy
-
-| Library   | Minimum Version |
-| --------- | --------------- |
-| glibc     | 2.38            |
-| libstdc++ | GLIBCXX_3.4.32  |
-| libgcc_s  | GCC 4.2+        |
+| Library   | Minimum Version | Required By |
+| --------- | --------------- | ----------- |
+| glibc     | 2.38            | Both        |
+| libstdc++ | GLIBCXX_3.4.29  | localproxy  |
+| libgcc_s  | GCC_3.0         | localproxy  |
+| OpenSSL   | 3.0.0           | localproxy  |
 
 Install on Ubuntu:
 
 ```bash
-sudo apt install libc6 libstdc++6 libgcc-s1
+sudo apt install libc6 libstdc++6 libgcc-s1 libssl3
 ```
 
 ## License
