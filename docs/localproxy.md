@@ -34,11 +34,11 @@ sudo apt install zlib1g protobuf-compiler libprotobuf-dev libssl-dev
 ### Build
 
 ```sh
-cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF
+cmake -B build -DCMAKE_BUILD_TYPE=Release -DLINK_STATIC_OPENSSL=OFF -DBUILD_TESTS=OFF
 make -C build/
 ```
 
-The resulting binary should be approximately 16MB.
+The resulting binary should be approximately 4MB.
 
 ### Deployment
 
