@@ -2,7 +2,7 @@
 
 ## Runtime Requirements
 
-- AWS IoT Greengrass Core v2.x
+- AWS IoT Greengrass v2 (nucleus/nucleus lite)
 - localproxy binary (included in component artifacts)
 - Network connectivity to AWS IoT Core
 - Appropriate IAM permissions (see [deployment.md](deployment.md#prerequisites))
