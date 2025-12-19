@@ -1,7 +1,7 @@
 ---
 RecipeFormatVersion: "2020-01-25"
 ComponentName: "aws.greengrass.SecureTunneling"
-ComponentVersion: "3.0.0"
+ComponentVersion: "2.0.0"
 ComponentType: "aws.greengrass.generic"
 ComponentDescription:
   "Enables AWS IoT Secure Tunneling connections that you can use to establish
@@ -33,24 +33,8 @@ Manifests:
           --max-tunnels {configuration:/maxConcurrentTunnels} --timeout
           {configuration:/tunnelTimeoutSeconds} --artifact-path {artifacts:path}"
     Artifacts:
-      - Uri: "s3://BUCKET_NAME/COMPONENT_NAME/COMPONENT_VERSION/secure-tunnel"
-        Unarchive: "NONE"
-        Permission:
-          Read: "OWNER"
-          Execute: "OWNER"
-      - Uri: "s3://BUCKET_NAME/COMPONENT_NAME/COMPONENT_VERSION/localproxy"
-        Unarchive: "NONE"
-        Permission:
-          Read: "OWNER"
-          Execute: "OWNER"
-    Artifacts:
-      - Uri: "s3://BUCKET_NAME/COMPONENT_NAME/COMPONENT_VERSION/secure-tunnel"
-        Unarchive: "NONE"
-        Permission:
-          Read: "OWNER"
-          Execute: "OWNER"
-      - Uri: "s3://BUCKET_NAME/COMPONENT_NAME/COMPONENT_VERSION/localproxy"
-        Unarchive: "NONE"
+      - Uri: "s3://BUCKET_NAME/COMPONENT_NAME/COMPONENT_VERSION/GreengrassV2SecureTunnelingComponent-x86_64.zip"
+        Unarchive: "ZIP"
         Permission:
           Read: "OWNER"
           Execute: "OWNER"
@@ -65,13 +49,8 @@ Manifests:
           --max-tunnels {configuration:/maxConcurrentTunnels} --timeout
           {configuration:/tunnelTimeoutSeconds} --artifact-path {artifacts:path}"
     Artifacts:
-      - Uri: "s3://BUCKET_NAME/COMPONENT_NAME/COMPONENT_VERSION/secure-tunnel"
-        Unarchive: "NONE"
-        Permission:
-          Read: "OWNER"
-          Execute: "OWNER"
-      - Uri: "s3://BUCKET_NAME/COMPONENT_NAME/COMPONENT_VERSION/localproxy"
-        Unarchive: "NONE"
+      - Uri: "s3://BUCKET_NAME/COMPONENT_NAME/COMPONENT_VERSION/GreengrassV2SecureTunnelingComponent-arm64.zip"
+        Unarchive: "ZIP"
         Permission:
           Read: "OWNER"
           Execute: "OWNER"
@@ -87,13 +66,25 @@ Manifests:
           --max-tunnels {configuration:/maxConcurrentTunnels} --timeout
           {configuration:/tunnelTimeoutSeconds} --artifact-path {artifacts:path}"
     Artifacts:
-      - Uri: "s3://BUCKET_NAME/COMPONENT_NAME/COMPONENT_VERSION/secure-tunnel"
-        Unarchive: "NONE"
+      - Uri: "s3://BUCKET_NAME/COMPONENT_NAME/COMPONENT_VERSION/GreengrassV2SecureTunnelingComponent-armv7l.zip"
+        Unarchive: "ZIP"
         Permission:
           Read: "OWNER"
           Execute: "OWNER"
-      - Uri: "s3://BUCKET_NAME/COMPONENT_NAME/COMPONENT_VERSION/localproxy"
-        Unarchive: "NONE"
+  - Platform:
+      os: "linux"
+      runtime: "*"
+      architecture: "aarch64"
+      architecture.detail: "armv8l"
+    Lifecycle:
+      run:
+        Script:
+          "{artifacts:path}/secure-tunnel --thing-name {iot:thingName}
+          --max-tunnels {configuration:/maxConcurrentTunnels} --timeout
+          {configuration:/tunnelTimeoutSeconds} --artifact-path {artifacts:path}"
+    Artifacts:
+      - Uri: "s3://BUCKET_NAME/COMPONENT_NAME/COMPONENT_VERSION/GreengrassV2SecureTunnelingComponent-arm64.zip"
+        Unarchive: "ZIP"
         Permission:
           Read: "OWNER"
           Execute: "OWNER"

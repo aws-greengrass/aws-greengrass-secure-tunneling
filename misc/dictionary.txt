@@ -1,5 +1,6 @@
 argp
 armv7
+armv8l
 BINDIR
 cflag
 cflags
