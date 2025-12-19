@@ -1,0 +1,71 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-latest
+            container: ubuntu:22.04
+            platform: linux/amd64
+          - arch: armv7
+            runner: ubuntu-latest
+            container: arm32v7/ubuntu:22.04
+            platform: linux/arm/v7
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up QEMU for cross-platform builds
+        if: matrix.arch == 'armv7'
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set version
+        id: version
+        run: echo "VERSION=$(cat version)" >> $GITHUB_OUTPUT
+
+      - name: Build in container
+        run: |
+          docker run --rm --platform=${{ matrix.platform }} \
+            -v $PWD:/workspace \
+            -w /workspace \
+            ${{ matrix.container }} \
+            bash -c "
+              apt-get update && \
+              apt-get install -y build-essential cmake pkg-config git libssl-dev && \
+              cmake -B build -DCMAKE_BUILD_TYPE=MinSizeRel -DGGL_LOG_LEVEL=INFO && \
+              make -C build -j\$(nproc) && \
+              strip build/bin/aws-greengrass-secure-tunnel
+            "
+
+      - name: Save package
+        run: |
+          mkdir -p ${{ github.workspace }}/zipfile/
+          cp build/bin/aws-greengrass-secure-tunnel ${{ github.workspace }}/zipfile/
+
+      - name: md5sums
+        run: md5sum ${{ github.workspace }}/zipfile/*
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name:
+            aws-greengrass-secure-tunnel-${{ matrix.arch }}-${{
+            steps.version.outputs.VERSION }}
+          path: ${{ github.workspace }}/zipfile/*
+          retention-days: 2
