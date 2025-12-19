@@ -10,7 +10,7 @@ HTTPS, RDP, and VNC.
 ## Quick Start
 
 1. [Build localproxy](docs/localproxy.md)
-2. [Build the component](docs/building.md)
+2. [Build the component](docs/BUILD.md)
 3. [Set up AWS permissions](docs/deployment.md#prerequisites)
 4. [Deploy to your device](docs/deployment.md#local-deployment)
 5. [Create and use tunnels](docs/usage.md)
