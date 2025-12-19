@@ -11,28 +11,55 @@ permissions:
   contents: read
 
 jobs:
-  build:
-    name: Build ${{ matrix.arch }}
-    runs-on: ${{ matrix.runner }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - arch: x86_64
-            runner: ubuntu-latest
-            container: ubuntu:22.04
-            platform: linux/amd64
-          - arch: armv7
-            runner: ubuntu-latest
-            container: arm32v7/ubuntu:22.04
-            platform: linux/arm/v7
+  build-x86_64:
+    name: Build x86_64
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Set up QEMU for cross-platform builds
-        if: matrix.arch == 'armv7'
+      - name: Set version
+        id: version
+        run: echo "VERSION=$(cat version)" >> $GITHUB_OUTPUT
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake pkg-config git libssl-dev
+
+      - name: Build
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=MinSizeRel -DGGL_LOG_LEVEL=INFO
+          make -C build -j$(nproc)
+          strip build/bin/aws-greengrass-secure-tunnel
+
+      - name: Save package
+        run: |
+          mkdir -p ${{ github.workspace }}/zipfile/
+          cp build/bin/aws-greengrass-secure-tunnel ${{ github.workspace }}/zipfile/
+
+      - name: md5sums
+        run: md5sum ${{ github.workspace }}/zipfile/*
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name:
+            aws-greengrass-secure-tunnel-x86_64-${{
+            steps.version.outputs.VERSION }}
+          path: ${{ github.workspace }}/zipfile/*
+          retention-days: 2
+
+  build-armv7:
+    name: Build armv7
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
       - name: Set version
@@ -41,10 +68,10 @@ jobs:
 
       - name: Build in container
         run: |
-          docker run --rm --platform=${{ matrix.platform }} \
+          docker run --rm --platform=linux/arm/v7 \
             -v $PWD:/workspace \
             -w /workspace \
-            ${{ matrix.container }} \
+            arm32v7/ubuntu:22.04 \
             bash -c "
               apt-get update && \
               apt-get install -y build-essential cmake pkg-config git libssl-dev && \
@@ -65,7 +92,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name:
-            aws-greengrass-secure-tunnel-${{ matrix.arch }}-${{
-            steps.version.outputs.VERSION }}
+            aws-greengrass-secure-tunnel-armv7-${{
+            steps.version.outputs.VERSION}}
           path: ${{ github.workspace }}/zipfile/*
           retention-days: 2
