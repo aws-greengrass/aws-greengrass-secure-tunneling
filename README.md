@@ -43,9 +43,9 @@ included in these measurements._
 
 | Library   | Minimum Version | Required By |
 | --------- | --------------- | ----------- |
-| glibc     | 2.38            | Both        |
-| libstdc++ | GLIBCXX_3.4.29  | localproxy  |
-| libgcc_s  | GCC_3.0         | localproxy  |
+| glibc     | 2.35            | Both        |
+| libstdc++ | 3.4.29          | localproxy  |
+| libgcc_s  | 3.0             | localproxy  |
 | OpenSSL   | 3.0.0           | localproxy  |
 
 Install on Ubuntu:
