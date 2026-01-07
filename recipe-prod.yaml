@@ -29,7 +29,7 @@ Manifests:
     Lifecycle:
       run:
         Script:
-          "{artifacts:decompressedPath}/GreengrassSecureTunnelingComponent-x86_64/aws-greengrass-secure-tunnel\
+          "{artifacts:decompressedPath}/GreengrassSecureTunnelingComponent-x86_64/aws-greengrass-secure-tunnel
           --thing-name {iot:thingName} --max-tunnels
           {configuration:/maxConcurrentTunnels} --timeout
           {configuration:/tunnelTimeoutSeconds} --artifact-path
@@ -47,7 +47,7 @@ Manifests:
     Lifecycle:
       run:
         Script:
-          "{artifacts:decompressedPath}/GreengrassV2SecureTunnelingComponent-arm64/aws-greengrass-secure-tunnel\
+          "{artifacts:decompressedPath}/GreengrassV2SecureTunnelingComponent-arm64/aws-greengrass-secure-tunnel
           --thing-name {iot:thingName} --max-tunnels
           {configuration:/maxConcurrentTunnels} --timeout
           {configuration:/tunnelTimeoutSeconds} --artifact-path
@@ -66,7 +66,7 @@ Manifests:
     Lifecycle:
       run:
         Script:
-          "{artifacts:decompressedPath}/GreengrassV2SecureTunnelingComponent-armv7l/aws-greengrass-secure-tunnel\
+          "{artifacts:decompressedPath}/GreengrassV2SecureTunnelingComponent-armv7l/aws-greengrass-secure-tunnel
           --thing-name {iot:thingName} --max-tunnels
           {configuration:/maxConcurrentTunnels} --timeout
           {configuration:/tunnelTimeoutSeconds} --artifact-path
@@ -85,7 +85,7 @@ Manifests:
     Lifecycle:
       run:
         Script:
-          "{artifacts:decompressedPath}/GreengrassV2SecureTunnelingComponent-arm64/aws-greengrass-secure-tunnel\
+          "{artifacts:decompressedPath}/GreengrassV2SecureTunnelingComponent-arm64/aws-greengrass-secure-tunnel
           --thing-name {iot:thingName} --max-tunnels
           {configuration:/maxConcurrentTunnels} --timeout
           {configuration:/tunnelTimeoutSeconds} --artifact-path
