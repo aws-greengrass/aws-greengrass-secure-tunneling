@@ -26,9 +26,9 @@ Run all tests:
 Or manually:
 
 ```bash
-cmake -B build-test -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
-make -C build-test -j$(nproc)
-ctest --test-dir build-test --output-on-failure
+cmake -B build -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
+make -C build -j$(nproc)
+ctest --test-dir build --output-on-failure
 ```
 
 ## Code Coverage
@@ -48,15 +48,15 @@ Generate coverage report:
 Or manually:
 
 ```bash
-cmake -B build-test -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Debug -DENABLE_COVERAGE=ON
-make -C build-test -j$(nproc)
-ctest --test-dir build-test
-lcov --capture --directory build-test --output-file build-test/coverage.info
-lcov --remove build-test/coverage.info '*/test/*' '*/build-test/_deps/*' --output-file build-test/coverage_filtered.info
-genhtml build-test/coverage_filtered.info --output-directory build-test/coverage_html
+cmake -B build -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Debug -DENABLE_COVERAGE=ON
+make -C build -j$(nproc)
+ctest --test-dir build
+lcov --capture --directory build --output-file build/coverage.info
+lcov --remove build/coverage.info '*/test/*' '*/build/_deps/*' --output-file build/coverage_filtered.info
+genhtml build/coverage_filtered.info --output-directory build/coverage_html
 ```
 
-The HTML report at the location: `build-test/coverage_html/index.html`
+The HTML report at the location: `build/coverage_html/index.html`
 
 ## Adding New Tests
 

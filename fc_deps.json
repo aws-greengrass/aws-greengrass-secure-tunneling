@@ -1,7 +1,12 @@
 {
+  "unity": {
+    "url": "https://github.com/ThrowTheSwitch/Unity.git",
+    "rev": "v2.6.1",
+    "hash": "sha256-g0ubq7RxGQmL1R6vz9RIGJpVWYsgrZhsTWSrL1ySEug="
+  },
   "gg_sdk": {
     "url": "https://github.com/aws-greengrass/aws-greengrass-component-sdk.git",
-    "rev": "1e54e70d4000ebf71572ba09e422d09666652787",
-    "hash": "sha256-n2c1X8sSNimi53gEmIJ2xK5n16x+xInuJEE4KRECNd0="
+    "rev": "38da6d70798155baedc65c9f525b3aa4f49c6aea",
+    "hash": "sha256-NA0WvnDHc5ijrj19ElUrwQHaR0PjB9shwRrFcik+jR4="
   }
 }

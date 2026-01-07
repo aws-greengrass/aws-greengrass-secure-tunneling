@@ -20,23 +20,44 @@
             ./CMakeLists.txt
             ./src
             ./include
-            ./fc_deps.json
             ./.clang-tidy
             ./version
             ./misc
+            ./fc_deps.json
           ];
         };
+
+        filteredTestSrc = lib.fileset.toSource {
+          root = ./.;
+          fileset = lib.fileset.unions [
+            ./CMakeLists.txt
+            ./src
+            ./include
+            ./.clang-tidy
+            ./version
+            ./misc
+            ./fc_deps.json
+            ./test
+          ];
+        };
+
+        testDeps = pkgs: lib.mapAttrs
+          (_: v: pkgs.fetchgit (v // { fetchSubmodules = true; }))
+          (builtins.fromJSON (builtins.readFile ./test/fc_deps.json));
+
+        deps = pkgs: lib.mapAttrs
+          (_: v: pkgs.fetchgit (v // { fetchSubmodules = true; }))
+          (builtins.fromJSON (builtins.readFile ./fc_deps.json));
+
+        fetchContentFlags = pkgs: lib.mapAttrsToList
+          (n: v: "-DFETCHCONTENT_SOURCE_DIR_${lib.toUpper n}=${v}")
+          (deps pkgs);
 
         llvmStdenv = pkgs: pkgs.overrideCC pkgs.llvmPackages.stdenv
           (pkgs.llvmPackages.stdenv.cc.override
             { inherit (pkgs.llvmPackages) bintools; });
 
-        deps = pkgs: mapAttrs (_: v: pkgs.fetchgit (v // { fetchSubmodules = true; }))
-          (fromJSON (readFile ./fc_deps.json));
 
-        fetchContentFlags = pkgs: mapAttrsToList
-          (n: v: "-DFETCHCONTENT_SOURCE_DIR_${toUpper n}=${v}")
-          (deps pkgs);
 
       in
       {
@@ -78,7 +99,7 @@
             nativeBuildInputs = [ pkg-config cmake ninja ];
             buildInputs = [ openssl ] ++ lib.optional (!stdenv.hostPlatform.isGnu) argp-standalone;
             cmakeBuildType = "MinSizeRel";
-            cmakeFlags = (fetchContentFlags pkgs) ++ [ "-DENABLE_WERROR=1" ];
+            cmakeFlags = [ "-DENABLE_WERROR=1" ] ++ (fetchContentFlags pkgs);
             dontStrip = true;
             meta = defaultMeta;
           };
@@ -93,8 +114,9 @@
                 buildPhase = ''
                   export PKG_CONFIG_PATH="${openssl.dev}/lib/pkgconfig:$PKG_CONFIG_PATH"
                   ${cmake}/bin/cmake -B $out -S ${filteredSrc} \
-                    -D CMAKE_BUILD_TYPE=Debug ${toString (fetchContentFlags pkgs)} \
-                    -D CMAKE_C_FLAGS="-I${openssl.dev}/include"
+                    -D CMAKE_BUILD_TYPE=Debug \
+                    -D CMAKE_C_FLAGS="-I${openssl.dev}/include" \
+                    ${toString (fetchContentFlags pkgs)}
                   rm $out/CMakeFiles/CMakeConfigureLog.yaml
                 '';
                 dontUnpack = true;
@@ -146,6 +168,22 @@
                 sed 's|\(.*\)error:\(.*\)|'$white'\1'$red'error:'$white'\2'$clear'|' |\
                 sed 's|${filteredSrc}/||'
             '';
+
+            unit-tests = { pkgs, stdenv, git, cmake, ninja, ruby, ... }:
+              let
+                testFetchFlags = lib.mapAttrsToList
+                  (n: v: "-DFETCHCONTENT_SOURCE_DIR_${lib.toUpper n}=${v}")
+                  (testDeps pkgs);
+              in
+              stdenv.mkDerivation {
+                name = "check-unit-tests";
+                src = filteredTestSrc;
+                nativeBuildInputs = [ git cmake ninja ruby ];
+                cmakeBuildType = "MinSizeRel";
+                cmakeFlags = (fetchContentFlags pkgs) ++ testFetchFlags ++ [ "-DBUILD_TESTING=1" ];
+                postBuild = ''ctest --verbose'';
+                installPhase = "touch $out";
+              };
           };
 
         withOverlays = final: prev: {

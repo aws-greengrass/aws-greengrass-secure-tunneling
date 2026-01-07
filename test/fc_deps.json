@@ -1,10 +1,7 @@
 {
-  "unity": {
-    "url": "https://github.com/ThrowTheSwitch/Unity.git",
-    "rev": "v2.6.1"
-  },
   "cmock": {
     "url": "https://github.com/ThrowTheSwitch/CMock.git",
-    "rev": "v2.6.0"
+    "rev": "v2.6.0",
+    "hash": "sha256-r/qufSVyt2/NZ6QqCsiXjxGBVE1XgVVqhPIi421rKB0="
   }
 }
