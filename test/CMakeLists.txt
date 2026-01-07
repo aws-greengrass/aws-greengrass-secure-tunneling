@@ -1,6 +1,6 @@
 # Test configuration for aws-greengrass-secure-tunnel
 
-# Load test dependencies
+# Load test dependencies (cmock only)
 file(READ ${CMAKE_CURRENT_SOURCE_DIR}/fc_deps.json FC_DEPS_JSON)
 string(JSON FC_DEPS_COUNT LENGTH "${FC_DEPS_JSON}")
 math(EXPR FC_DEPS_INDEX_MAX "${FC_DEPS_COUNT} - 1")
@@ -12,24 +12,15 @@ foreach(index RANGE ${FC_DEPS_INDEX_MAX})
   fetchcontent_declare(
     "${dep_name}"
     GIT_REPOSITORY "${dep_url}"
-    GIT_TAG "${dep_rev}")
+    GIT_TAG "${dep_rev}"
+    SOURCE_SUBDIR nonexistent_dir)
   fetchcontent_makeavailable(${dep_name})
 endforeach()
 
-# Unity test framework (use fetched version if available)
-if(NOT TARGET unity)
-  add_library(unity STATIC ${unity_SOURCE_DIR}/src/unity.c)
-  target_include_directories(unity PUBLIC ${unity_SOURCE_DIR}/src)
-  target_compile_definitions(unity PUBLIC UNITY_INCLUDE_DOUBLE)
-endif()
-
 # CMock framework
-if(NOT TARGET cmock)
-  add_library(cmock STATIC ${cmock_SOURCE_DIR}/src/cmock.c)
-  target_include_directories(cmock PUBLIC ${cmock_SOURCE_DIR}/src
-                                          ${unity_SOURCE_DIR}/src)
-  target_link_libraries(cmock PUBLIC unity)
-endif()
+add_library(cmock STATIC ${cmock_SOURCE_DIR}/src/cmock.c)
+target_include_directories(cmock PUBLIC ${cmock_SOURCE_DIR}/src)
+target_link_libraries(cmock PUBLIC unity)
 
 # Test helper library
 add_library(test_helpers STATIC test_helpers.c)

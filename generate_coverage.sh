@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-BUILD_DIR="build-test"
+BUILD_DIR="build"
 
 # Clean previous build
 rm -rf "$BUILD_DIR"
@@ -19,7 +19,7 @@ ctest --test-dir "$BUILD_DIR" --output-on-failure
 lcov --capture --directory "$BUILD_DIR" --output-file "$BUILD_DIR/coverage.info"
 
 # Filter out system and test files
-lcov --remove "$BUILD_DIR/coverage.info" '*/test/*' '*/build-test/_deps/*' --output-file "$BUILD_DIR/coverage_filtered.info"
+lcov --remove "$BUILD_DIR/coverage.info" '*/test/*' '*/build/_deps/*' --output-file "$BUILD_DIR/coverage_filtered.info"
 
 # Generate HTML report
 genhtml "$BUILD_DIR/coverage_filtered.info" --output-directory "$BUILD_DIR/coverage_html"

@@ -175,20 +175,29 @@ set(ENV{ZERO_AR_DATE} "1")
 set(FETCHCONTENT_QUIET FALSE)
 include(FetchContent)
 
-file(READ fc_deps.json FC_DEPS_JSON)
-string(JSON FC_DEPS_COUNT LENGTH "${FC_DEPS_JSON}")
-math(EXPR FC_DEPS_INDEX_MAX "${FC_DEPS_COUNT} - 1")
+# Load dependencies from fc_deps.json
+file(READ ${CMAKE_CURRENT_SOURCE_DIR}/fc_deps.json FC_DEPS_JSON)
 
-foreach(index RANGE ${FC_DEPS_INDEX_MAX})
-  string(JSON dep_name MEMBER "${FC_DEPS_JSON}" ${index})
-  string(JSON dep_url GET "${FC_DEPS_JSON}" "${dep_name}" url)
-  string(JSON dep_rev GET "${FC_DEPS_JSON}" "${dep_name}" rev)
+# Fetch unity first if testing (required by gg_sdk)
+if(BUILD_TESTING)
+  string(JSON dep_url GET "${FC_DEPS_JSON}" unity url)
+  string(JSON dep_rev GET "${FC_DEPS_JSON}" unity rev)
   fetchcontent_declare(
-    "${dep_name}"
+    unity
     GIT_REPOSITORY "${dep_url}"
-    GIT_TAG "${dep_rev}")
-  fetchcontent_makeavailable(${dep_name})
-endforeach()
+    GIT_TAG "${dep_rev}"
+    SOURCE_SUBDIR nonexistent_dir)
+  fetchcontent_makeavailable(unity)
+endif()
+
+# Fetch gg_sdk
+string(JSON dep_url GET "${FC_DEPS_JSON}" gg_sdk url)
+string(JSON dep_rev GET "${FC_DEPS_JSON}" gg_sdk rev)
+fetchcontent_declare(
+  gg_sdk
+  GIT_REPOSITORY "${dep_url}"
+  GIT_TAG "${dep_rev}")
+fetchcontent_makeavailable(gg_sdk)
 
 include(CheckCSourceCompiles)
 

@@ -42,6 +42,7 @@ LOGT
 LOGW
 makeavailable
 MINSIZEREL
+mqtt
 mqttproxy
 nodlopen
 noexecstack
