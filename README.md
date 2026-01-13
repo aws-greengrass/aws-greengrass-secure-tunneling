@@ -15,7 +15,25 @@ HTTPS, RDP, and VNC.
 4. [Deploy to your device](docs/deployment.md#local-deployment)
 5. [Create and use tunnels](docs/usage.md)
 
-For configuration options, see [Configuration](docs/configuration.md).
+## Configuration
+
+### Component Parameters
+
+The component supports the following configuration parameters:
+
+#### maxConcurrentTunnels
+
+Maximum number of concurrent tunnels allowed.
+
+- Type: Integer
+- Default: `20`
+
+#### tunnelTimeoutSeconds
+
+Tunnel timeout duration in seconds.
+
+- Type: Integer
+- Default: `43200` (12 hours)
 
 ## Supported Services
 

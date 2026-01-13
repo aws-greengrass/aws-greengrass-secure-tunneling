@@ -56,7 +56,9 @@ Or use the build script:
 
 ## Component Structure
 
-For Greengrass deployment, create this directory hierarchy:
+### For local deployment
+
+For Greengrass Local deployment, create this directory hierarchy:
 
 ```
 components
@@ -67,6 +69,16 @@ components
 │           └── localproxy
 └── recipes
     └── aws.greengrass.SecureTunneling-1.0.0.yaml
+```
+
+### For cloud deployment
+
+For Greengrass Cloud deployment, create a zip file with this structure:
+
+```
+aws.greengrass.SecureTunneling-1.0.0.zip
+├── secure-tunnel
+└── localproxy
 ```
 
 - `secure-tunnel`: Built binary from `./build/bin`
