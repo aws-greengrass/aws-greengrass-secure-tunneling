@@ -56,6 +56,7 @@ Verify deployment:
 
 ```sh
 # Check nucleus logs for SUCCEEDED status
+journalctl -afu 'ggl.*'
 ```
 
 ## Cloud Deployment
@@ -70,6 +71,12 @@ See
 for detailed guidance.
 
 ## Monitoring
+
+Follow nucleus logs
+
+```sh
+journalctl -afu 'ggl.*'
+```
 
 View component logs:
 

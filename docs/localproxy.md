@@ -9,6 +9,10 @@ from AWS IoT Secure Tunneling.
 Tested with
 [commit feb59e2](https://github.com/aws-samples/aws-iot-securetunneling-localproxy/commit/feb59e268c8f4f1c7450f3a510963e84cc397ac7).
 
+If you want arm64, arm7l or x86 linux build these are available as pre-built
+binaries with the repo's
+[latest release](https://github.com/aws-samples/aws-iot-securetunneling-localproxy/releases/).
+
 ## Build Instructions
 
 The following commands assume you're building on the same architecture as your
