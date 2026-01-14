@@ -55,3 +55,15 @@ target_compile_definitions(test_secure_tunnel
 target_link_libraries(test_secure_tunnel PRIVATE cmock unity test_helpers
                                                  gg-sdk)
 add_test(NAME test_secure_tunnel COMMAND test_secure_tunnel)
+
+# Test: localproxy failure cleanup
+add_executable(
+  test_localproxy_failure ${CMAKE_SOURCE_DIR}/src/tunnel_notification_parser.c
+                          test_localproxy_failure.c)
+target_include_directories(
+  test_localproxy_failure PRIVATE ${CMAKE_SOURCE_DIR}/include
+                                  ${CMAKE_SOURCE_DIR}/src)
+target_compile_definitions(test_localproxy_failure
+                           PRIVATE "GG_MODULE=(\"test_localproxy_failure\")")
+target_link_libraries(test_localproxy_failure PRIVATE unity test_helpers gg-sdk)
+add_test(NAME test_localproxy_failure COMMAND test_localproxy_failure)
