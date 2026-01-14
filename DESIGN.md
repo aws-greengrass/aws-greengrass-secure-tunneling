@@ -136,8 +136,8 @@ See [README.md](README.md#configuration) for detailed parameters.
 
 Key settings:
 
-- `maxConcurrentTunnels`: Max simultaneous tunnels (default: 20)
-- `tunnelTimeoutSeconds`: Tunnel lifetime (default: 43200)
+- `maxConcurrentTunnels`: Max simultaneous tunnels (default and max: 20)
+- `tunnelTimeoutSeconds`: Tunnel lifetime (default and max: 43200)
 
 ## Supported Services
 
