@@ -23,7 +23,7 @@ static uint16_t get_port_from_service(GgBuffer service) {
     if (gg_buffer_eq(service, GG_STR("VNC"))) {
         return 5900;
     }
-    return 22; // Default to SSH
+    return 0; // unknown port
 }
 
 GgError parse_and_validate_notification(
@@ -86,6 +86,10 @@ GgError parse_and_validate_notification(
     request->service[service_len] = '\0';
 
     request->port = get_port_from_service(service);
+    if (request->port == 0) {
+        GG_LOGE("Unsupported service: %.*s", (int) service.len, service.data);
+        return GG_ERR_INVALID;
+    }
 
     return GG_ERR_OK;
 }
