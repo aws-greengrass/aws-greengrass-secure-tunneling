@@ -120,6 +120,16 @@ static error_t arg_parser(int key, char *arg, struct argp_state *state) {
             exit(1);
         }
 
+        if (args->tunnel_timeout_seconds > 43200) {
+            GG_LOGE(
+                "Error: tunnelTimeoutSeconds cannot exceed 43200 (provided: "
+                "%d)",
+                args->tunnel_timeout_seconds
+            );
+            // NOLINTNEXTLINE(concurrency-mt-unsafe)
+            exit(1);
+        }
+
         break;
     default:
         return ARGP_ERR_UNKNOWN;
