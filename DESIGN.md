@@ -132,7 +132,7 @@ expand support for multiplex tunnels.
 
 ## Configuration
 
-See [configuration.md](docs/configuration.md) for detailed parameters.
+See [README.md](README.md#configuration) for detailed parameters.
 
 Key settings:
 
