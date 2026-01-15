@@ -32,6 +32,7 @@ static void cleanup_tunnel_slot(TunnelCreationContext **ctx) {
         active_tunnels--;
         int slot = (int) (*ctx - tunnel_contexts);
         tunnel_slots_mask &= ~(1U << slot);
+        GG_LOGI("Tunnel closed (active tunnels: %d)", active_tunnels);
         *ctx = NULL;
     }
 }
@@ -128,8 +129,10 @@ static void *tunnel_worker(void *arg) {
     }
 
     // Prepare localproxy arguments (without access token)
-    const char *args[] = { "localproxy", "-r", ctx->region,          "-d",
-                           dest_addr,    "-v", LOCALPROXY_LOG_LEVEL, NULL };
+    const char *args[] = { "localproxy", "-r",      ctx->region,
+                           "-d",         dest_addr, "--destination-client-type",
+                           "V1",         "-v",      LOCALPROXY_LOG_LEVEL,
+                           NULL };
 
     GG_LOGI(
         "Using localproxy for service: %s on port %u", ctx->service, ctx->port
