@@ -139,7 +139,8 @@ string(STRIP "${SEC_TUN_VERSION}" SEC_TUN_VERSION)
 add_compile_definitions("SEC_TUN_VERSION=\"${SEC_TUN_VERSION}\"")
 
 add_compile_definitions(_GNU_SOURCE)
-add_compile_definitions($<$<NOT:$<CONFIG:Debug>>:_FORTIFY_SOURCE=3>)
+add_compile_options($<$<NOT:$<CONFIG:Debug>>:-U_FORTIFY_SOURCE>)
+add_compile_options($<$<NOT:$<CONFIG:Debug>>:-D_FORTIFY_SOURCE=3>)
 
 # Coverage flags
 if(ENABLE_COVERAGE)
