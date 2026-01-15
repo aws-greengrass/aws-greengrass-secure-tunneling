@@ -43,6 +43,25 @@ Replace `<REGION>` and `<ACCOUNT-ID>` with your values.
 
 ## Local Deployment
 
+### Greengrass Nucleus
+
+Deploy using greengrass-cli:
+
+```sh
+sudo /greengrass/v2/bin/greengrass-cli deployment create \
+  --recipeDir components/recipes \
+  --artifactDir components/artifacts \
+  --merge "aws.greengrass.SecureTunneling=1.0.0"
+```
+
+Verify deployment:
+
+```sh
+tail -f /greengrass/v2/logs/greengrass.log
+```
+
+### Greengrass Nucleus Lite
+
 Deploy using ggl-cli:
 
 ```sh
@@ -55,7 +74,6 @@ Deploy using ggl-cli:
 Verify deployment:
 
 ```sh
-# Check nucleus logs for SUCCEEDED status
 journalctl -afu 'ggl.*'
 ```
 
@@ -72,7 +90,17 @@ for detailed guidance.
 
 ## Monitoring
 
-Follow nucleus logs
+### Greengrass Nucleus
+
+View logs in the Greengrass root directory:
+
+```sh
+tail -f /greengrass/v2/logs/aws.greengrass.SecureTunneling.log
+```
+
+### Greengrass Nucleus Lite
+
+Follow nucleus logs:
 
 ```sh
 journalctl -afu 'ggl.*'

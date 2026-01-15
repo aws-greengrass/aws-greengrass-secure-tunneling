@@ -68,7 +68,7 @@ components
 │           ├── secure-tunnel
 │           └── localproxy
 └── recipes
-    └── aws.greengrass.SecureTunneling-1.0.0.yaml
+    └── aws.greengrass.SecureTunneling-2.0.0.yaml
 ```
 
 ### For cloud deployment
@@ -76,10 +76,12 @@ components
 For Greengrass Cloud deployment, create a zip file with this structure:
 
 ```
-aws.greengrass.SecureTunneling-1.0.0.zip
+aws.greengrass.SecureTunneling-2.0.0.zip
 ├── secure-tunnel
 └── localproxy
 ```
+
+and then you can upload the zip to a S3 bucket.
 
 - `secure-tunnel`: Built binary from `./build/bin`
 - `localproxy`: Binary from [localproxy.md](localproxy.md)
