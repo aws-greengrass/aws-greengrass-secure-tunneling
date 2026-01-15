@@ -51,10 +51,19 @@ Or use the build script:
 ### Test Standalone
 
 ```sh
-./build/bin/secure-tunnel --help
+./build/bin/aws-greengrass-secure-tunnel --help
 ```
 
 ## Component Structure
+
+### For GDK deployment (recommended)
+
+Use the [GDK CLI](../docs/gdk.md) to build and publish:
+
+```sh
+gdk component build
+gdk component publish
+```
 
 ### For local deployment
 
@@ -65,7 +74,7 @@ components
 ├── artifacts
 │   └── aws.greengrass.SecureTunneling
 │       └── 1.0.0
-│           ├── secure-tunnel
+│           ├── aws-greengrass-secure-tunnel
 │           └── localproxy
 └── recipes
     └── aws.greengrass.SecureTunneling-2.0.0.yaml
@@ -77,12 +86,12 @@ For Greengrass Cloud deployment, create a zip file with this structure:
 
 ```
 aws.greengrass.SecureTunneling-2.0.0.zip
-├── secure-tunnel
+├── aws-greengrass-secure-tunnel
 └── localproxy
 ```
 
 and then you can upload the zip to a S3 bucket.
 
-- `secure-tunnel`: Built binary from `./build/bin`
+- `aws-greengrass-secure-tunnel`: Built binary from `./build/bin`
 - `localproxy`: Binary from [localproxy.md](localproxy.md)
 - Recipe: Component configuration file

@@ -12,7 +12,9 @@ HTTPS, RDP, and VNC.
 1. [Build localproxy](docs/localproxy.md)
 2. [Build the component](docs/BUILD.md)
 3. [Set up AWS permissions](docs/deployment.md#prerequisites)
-4. [Deploy to your device](docs/deployment.md#local-deployment)
+4. Deploy to your device:
+   - [Local deployment](docs/deployment.md#local-deployment)
+   - [GDK deployment](docs/gdk.md) (recommended)
 5. [Create and use tunnels](docs/usage.md)
 
 ## Configuration

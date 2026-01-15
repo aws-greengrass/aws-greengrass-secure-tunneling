@@ -1,0 +1,21 @@
+{
+  "component": {
+    "aws.greengrass.SecureTunneling": {
+      "author": "AWS",
+      "version": "NEXT_PATCH",
+      "build": {
+        "build_system": "custom",
+        "custom_build_command": [
+          "bash",
+          "-c",
+          "cmake -B build -DCMAKE_BUILD_TYPE=MinSizeRel && make -C build -j$(nproc) && ./gdk-build.sh"
+        ]
+      },
+      "publish": {
+        "bucket": "BUCKET_NAME",
+        "region": "us-east-1"
+      }
+    }
+  },
+  "gdk_version": "1.6.0"
+}
