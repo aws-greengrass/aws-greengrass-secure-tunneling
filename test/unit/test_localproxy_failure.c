@@ -53,19 +53,22 @@ void tearDown(void) {
     test_remove_directory(TEST_DIR);
 }
 
-static SecureTunnelConfig make_config_with_max(
+static SecureTunnelConfig test_config;
+
+static SecureTunnelConfig *make_config_with_max(
     const char *artifact_path, int max_tunnels
 ) {
-    return (SecureTunnelConfig) {
+    test_config = (SecureTunnelConfig) {
         .thing_name = GG_STR("test-thing"),
         .region = GG_STR("us-west-2"),
         .artifact_path = gg_buffer_from_null_term((char *) artifact_path),
         .max_concurrent_tunnels = max_tunnels,
         .tunnel_timeout_seconds = 300,
     };
+    return &test_config;
 }
 
-static SecureTunnelConfig make_config(const char *artifact_path) {
+static SecureTunnelConfig *make_config(const char *artifact_path) {
     return make_config_with_max(artifact_path, 1);
 }
 
@@ -92,12 +95,12 @@ static GgMap mock_create_tunnel_notification(
 
 // Test non-existent localproxy binary
 void test_nonexistent_binary_cleanup(void) {
-    SecureTunnelConfig config = make_config("/nonexistent/path");
+    SecureTunnelConfig *config = make_config("/nonexistent/path");
     uint8_t arena_mem[1024];
     GgMap notification
         = mock_create_tunnel_notification(arena_mem, sizeof(arena_mem));
 
-    GgError ret = handle_tunnel_notification(notification, &config);
+    GgError ret = handle_tunnel_notification(notification, config);
     TEST_ASSERT_EQUAL(GG_ERR_OK, ret);
 
     // Wait for worker thread to complete
@@ -117,12 +120,12 @@ void test_nonexecutable_binary_cleanup(void) {
     fclose(f);
     chmod(TEST_DIR "/localproxy", 0644); // No execute permission
 
-    SecureTunnelConfig config = make_config(TEST_DIR);
+    SecureTunnelConfig *config = make_config(TEST_DIR);
     uint8_t arena_mem[1024];
     GgMap notification
         = mock_create_tunnel_notification(arena_mem, sizeof(arena_mem));
 
-    GgError ret = handle_tunnel_notification(notification, &config);
+    GgError ret = handle_tunnel_notification(notification, config);
     TEST_ASSERT_EQUAL(GG_ERR_OK, ret);
 
     usleep(100000);
@@ -142,15 +145,18 @@ void test_crashing_binary_cleanup(void) {
     fclose(f);
     chmod(TEST_DIR "/localproxy", 0755);
 
-    SecureTunnelConfig config = make_config(TEST_DIR);
+    SecureTunnelConfig *config = make_config(TEST_DIR);
     uint8_t arena_mem[1024];
     GgMap notification
         = mock_create_tunnel_notification(arena_mem, sizeof(arena_mem));
 
-    GgError ret = handle_tunnel_notification(notification, &config);
+    GgError ret = handle_tunnel_notification(notification, config);
     TEST_ASSERT_EQUAL(GG_ERR_OK, ret);
 
-    usleep(200000); // 200ms for crash handling
+    // Wait for worker thread to complete by polling active_tunnels
+    for (int i = 0; i < 50 && active_tunnels > 0; i++) {
+        usleep(100000); // 100ms
+    }
 
     TEST_ASSERT_EQUAL_INT(0, active_tunnels);
     TEST_ASSERT_EQUAL_UINT32(0, tunnel_slots_mask);
@@ -159,7 +165,7 @@ void test_crashing_binary_cleanup(void) {
 
 // Test that 21st tunnel is rejected when 20 slots are occupied
 void test_max_tunnel_slots_enforced(void) {
-    SecureTunnelConfig config
+    SecureTunnelConfig *config
         = make_config_with_max("/nonexistent", MAX_TUNNEL_SLOTS + 1);
     uint8_t arena_mem[1024];
 
@@ -171,7 +177,7 @@ void test_max_tunnel_slots_enforced(void) {
 
     GgMap notification
         = mock_create_tunnel_notification(arena_mem, sizeof(arena_mem));
-    GgError ret = handle_tunnel_notification(notification, &config);
+    GgError ret = handle_tunnel_notification(notification, config);
 
     TEST_ASSERT_EQUAL(GG_ERR_NOMEM, ret);
     TEST_ASSERT_EQUAL_INT(MAX_TUNNEL_SLOTS, active_tunnels);
