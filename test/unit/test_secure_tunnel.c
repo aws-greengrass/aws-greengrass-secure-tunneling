@@ -7,7 +7,6 @@
 
 #include "Mocksubscriptions.h"
 #include "secure-tunnel.h"
-#include "test_helpers.h"
 #include <unity.h>
 
 void test_run_secure_tunnel_success(void);

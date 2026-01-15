@@ -5,7 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "test_helpers.h"
 #include "tunnel_notification_parser.h"
 #include <gg/arena.h>
 #include <gg/json_decode.h>
