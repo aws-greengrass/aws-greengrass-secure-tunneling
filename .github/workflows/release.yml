@@ -37,7 +37,7 @@ jobs:
 
       - name: Build
         run: |
-          cmake -B build -DCMAKE_BUILD_TYPE=MinSizeRel -DGGL_LOG_LEVEL=INFO
+          cmake -B build -DCMAKE_BUILD_TYPE=MinSizeRel
           make -C build -j$(nproc)
           strip build/bin/aws-greengrass-secure-tunnel
 
@@ -82,7 +82,7 @@ jobs:
             bash -c "
               apt-get update && \
               apt-get install -y build-essential cmake pkg-config git libssl-dev && \
-              cmake -B build -DCMAKE_BUILD_TYPE=MinSizeRel -DGGL_LOG_LEVEL=INFO && \
+              cmake -B build -DCMAKE_BUILD_TYPE=MinSizeRel && \
               make -C build -j\$(nproc) && \
               strip build/bin/aws-greengrass-secure-tunnel
             "
