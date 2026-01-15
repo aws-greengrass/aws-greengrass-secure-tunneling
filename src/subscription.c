@@ -34,7 +34,7 @@ static void on_tunnel_notification(
 
     static uint8_t arena_mem[4096];
     GgArena arena = gg_arena_init(GG_BUF(arena_mem));
-    GgObject notification;
+    GgObject notification = { 0 };
 
     GgError ret = gg_json_decode_destructive(payload, &arena, &notification);
     if (ret != GG_ERR_OK) {
