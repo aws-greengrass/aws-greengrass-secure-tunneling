@@ -8,6 +8,8 @@
 cmake_minimum_required(VERSION 3.22)
 project(aws-greengrass-secure-tunnel C)
 
+set(GG_LOG_LEVEL CACHE STRING "GG log level")
+
 option(ENABLE_WERROR "Compile warnings as errors")
 option(BUILD_TESTING "Build tests" OFF)
 option(ENABLE_COVERAGE "Enable code coverage" OFF)
@@ -194,6 +196,7 @@ endif()
 # Fetch gg_sdk
 string(JSON dep_url GET "${FC_DEPS_JSON}" gg_sdk url)
 string(JSON dep_rev GET "${FC_DEPS_JSON}" gg_sdk rev)
+
 fetchcontent_declare(
   gg_sdk
   GIT_REPOSITORY "${dep_url}"
