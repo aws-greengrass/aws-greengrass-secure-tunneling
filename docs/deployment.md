@@ -79,8 +79,8 @@ journalctl -afu 'ggl.*'
 
 ## Cloud Deployment
 
-1. Use `recipe-all.yaml` (or `recipe.yaml` for architecture-specific builds) to
-   create a private component
+1. Use `recipe-prod.yaml` (gdk-cli to create and publish component) to create a
+   private component
 2. Create a new deployment in AWS IoT Greengrass
 3. Deploy to target devices
 

@@ -1,0 +1,35 @@
+---
+RecipeFormatVersion: "2020-01-25"
+ComponentName: "{COMPONENT_NAME}"
+ComponentVersion: "{COMPONENT_VERSION}"
+ComponentType: "aws.greengrass.generic"
+ComponentDescription:
+  "Enables AWS IoT Secure Tunneling connections that you can use to establish
+  secure bidirectional communications with Greengrass core devices that are
+  behind restricted firewalls."
+ComponentPublisher: "AWS"
+ComponentConfiguration:
+  DefaultConfiguration:
+    maxConcurrentTunnels: 20
+    tunnelTimeoutSeconds: 43200
+    accessControl:
+      aws.greengrass.ipc.mqttproxy:
+        "aws.greengrass.SecureTunneling:mqttproxy:1":
+          policyDescription: "Access to tunnel notification pubsub topic"
+          operations:
+            - "aws.greengrass#SubscribeToIoTCore"
+          resources:
+            - "$aws/things/+/tunnels/notify"
+Manifests:
+  - Platform:
+      os: "linux"
+      runtime: "*"
+    Lifecycle:
+      run: |
+        {artifacts:decompressedPath}/aws.greengrass.SecureTunneling/aws-greengrass-secure-tunnel --thing-name {iot:thingName} --max-tunnels {configuration:/maxConcurrentTunnels} --timeout {configuration:/tunnelTimeoutSeconds} --artifact-path {artifacts:decompressedPath}/aws.greengrass.SecureTunneling/
+    Artifacts:
+      - URI: "s3://BUCKET_NAME/COMPONENT_NAME/COMPONENT_VERSION/aws.greengrass.SecureTunneling.zip"
+        Unarchive: "ZIP"
+        Permission:
+          Read: "OWNER"
+          Execute: "OWNER"
