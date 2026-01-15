@@ -3,7 +3,7 @@
 
 set -e
 
-BUILD_DIR="${BUILD_DIR:-build-test}"
+BUILD_DIR="${BUILD_DIR:-build}"
 
 echo "Building tests..."
 cmake -B "$BUILD_DIR" -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Debug

@@ -15,9 +15,9 @@
 Or manually:
 
 ```bash
-cmake -B build-test -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
-make -C build-test -j$(nproc)
-cd build-test && ctest --output-on-failure
+cmake -B build -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
+make -C build -j$(nproc)
+cd build && ctest --output-on-failure
 ```
 
 ## Test Structure
@@ -37,10 +37,10 @@ sudo apt install lcov
 Then build with coverage flags:
 
 ```bash
-cmake -B build-test -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Debug \
+cmake -B build -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Debug \
   -DCMAKE_C_FLAGS="--coverage" -DCMAKE_EXE_LINKER_FLAGS="--coverage"
-make -C build-test -j$(nproc)
-cd build-test && ctest
+make -C build -j$(nproc)
+cd build && ctest
 lcov --capture --directory . --output-file coverage.info
 lcov --remove coverage.info '/usr/*' '*/test/*' --output-file coverage.info
 genhtml coverage.info --output-directory coverage_html
