@@ -7,6 +7,8 @@
 
 #include "secure-tunnel.h"
 #include "subscriptions.h"
+#include <gg/arena.h>
+#include <gg/base64.h>
 #include <gg/ipc/client.h>
 #include <gg/ipc/mock.h>
 #include <gg/ipc/packet_sequences.h>
@@ -58,9 +60,9 @@ GG_TEST_DEFINE(subscribe_to_tunnel_tokens_okay) {
 
         GG_TEST_ASSERT_OK(subscribe_to_aws_tunnel_tokens(&config));
 #ifdef ENABLE_COVERAGE
-        __gcov_flush();
+        __gcov_dump();
 #endif
-        _Exit(0);
+        exit(0);
     }
 
     GG_TEST_ASSERT_OK(gg_test_accept_client(1));
@@ -85,13 +87,21 @@ GG_TEST_DEFINE(subscribe_to_tunnel_tokens_okay) {
     GG_TEST_ASSERT_OK(gg_process_wait(pid));
 }
 
-// Base64 encoded JSON:
 // {"clientAccessToken":"test-token","region":"us-west-2","services":["SSH"]}
-static const char *TUNNEL_NOTIFICATION_B64
-    = "eyJjbGllbnRBY2Nlc3NUb2tlbiI6InRlc3QtdG9rZW4iLCJyZWdpb24iOiJ1cy13ZXN0LTIi"
-      "LCJzZXJ2aWNlcyI6WyJTU0giXX0=";
+static const char *TUNNEL_NOTIFICATION_JSON
+    = "{\"clientAccessToken\":\"test-token\",\"region\":\"us-west-2\","
+      "\"services\":[\"SSH\"]}";
 
 GG_TEST_DEFINE(subscribe_receives_notification) {
+    uint8_t arena_mem[256];
+    GgArena arena = gg_arena_init((GgBuffer) { .data = arena_mem, .len = 256 });
+    GgBuffer encoded;
+    GG_TEST_ASSERT_OK(gg_base64_encode(
+        gg_buffer_from_null_term((char *) TUNNEL_NOTIFICATION_JSON),
+        &arena,
+        &encoded
+    ));
+
     pid_t pid = fork();
     TEST_ASSERT_TRUE_MESSAGE(pid >= 0, "fork failed");
 
@@ -111,9 +121,9 @@ GG_TEST_DEFINE(subscribe_receives_notification) {
         // Wait for notification to be processed
         sleep(1);
 #ifdef ENABLE_COVERAGE
-        __gcov_flush();
+        __gcov_dump();
 #endif
-        _Exit(0);
+        exit(0);
     }
 
     GG_TEST_ASSERT_OK(gg_test_accept_client(1));
@@ -127,7 +137,7 @@ GG_TEST_DEFINE(subscribe_receives_notification) {
         gg_test_mqtt_subscribe_accepted_sequence(
             1,
             GG_STR("$aws/things/my-thing/tunnels/notify"),
-            gg_buffer_from_null_term((char *) TUNNEL_NOTIFICATION_B64),
+            encoded,
             GG_STR("1"),
             1 // send 1 message
         ),
