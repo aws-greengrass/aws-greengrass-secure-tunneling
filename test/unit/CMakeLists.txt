@@ -67,3 +67,17 @@ target_compile_definitions(test_localproxy_failure
                            PRIVATE "GG_MODULE=(\"test_localproxy_failure\")")
 target_link_libraries(test_localproxy_failure PRIVATE unity test_helpers gg-sdk)
 add_test(NAME test_localproxy_failure COMMAND test_localproxy_failure)
+
+# Test: service name validation
+add_executable(
+  test_service_name_validation
+  ${CMAKE_SOURCE_DIR}/src/tunnel_notification_parser.c
+  test_service_name_validation.c)
+target_include_directories(
+  test_service_name_validation PRIVATE ${CMAKE_SOURCE_DIR}/include
+                                       ${CMAKE_SOURCE_DIR}/src)
+target_compile_definitions(test_service_name_validation
+                           PRIVATE "GG_MODULE=(\"test_service_validation\")")
+target_link_libraries(test_service_name_validation PRIVATE unity test_helpers
+                                                           gg-sdk)
+add_test(NAME test_service_name_validation COMMAND test_service_name_validation)
