@@ -141,9 +141,8 @@ Key settings:
 
 ## Supported Services
 
-See README.md for complete service list. Common services:
-
-- SSH (22), HTTP (80), HTTPS (443), RDP (3389), VNC (5900)
+With support of localproxy application can support a wide range of protocol but
+for the first release only SSH (22) and VNC (5900) will be supported.
 
 ## Build & Test
 

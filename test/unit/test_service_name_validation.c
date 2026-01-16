@@ -65,27 +65,27 @@ static void test_ssh_service_accepted(void) {
     );
 }
 
-static void test_http_service_accepted(void) {
+static void test_http_service_rejected(void) {
     uint8_t arena_mem[1024];
     GgMap notification = create_notification(arena_mem, "HTTP");
     TEST_ASSERT_EQUAL(
-        GG_ERR_OK, handle_tunnel_notification(notification, &config)
+        GG_ERR_INVALID, handle_tunnel_notification(notification, &config)
     );
 }
 
-static void test_https_service_accepted(void) {
+static void test_https_service_rejected(void) {
     uint8_t arena_mem[1024];
     GgMap notification = create_notification(arena_mem, "HTTPS");
     TEST_ASSERT_EQUAL(
-        GG_ERR_OK, handle_tunnel_notification(notification, &config)
+        GG_ERR_INVALID, handle_tunnel_notification(notification, &config)
     );
 }
 
-static void test_rdp_service_accepted(void) {
+static void test_rdp_service_rejected(void) {
     uint8_t arena_mem[1024];
     GgMap notification = create_notification(arena_mem, "RDP");
     TEST_ASSERT_EQUAL(
-        GG_ERR_OK, handle_tunnel_notification(notification, &config)
+        GG_ERR_INVALID, handle_tunnel_notification(notification, &config)
     );
 }
 
@@ -116,9 +116,9 @@ static void test_empty_service_rejected(void) {
 int main(void) {
     UNITY_BEGIN();
     RUN_TEST(test_ssh_service_accepted);
-    RUN_TEST(test_http_service_accepted);
-    RUN_TEST(test_https_service_accepted);
-    RUN_TEST(test_rdp_service_accepted);
+    RUN_TEST(test_http_service_rejected);
+    RUN_TEST(test_https_service_rejected);
+    RUN_TEST(test_rdp_service_rejected);
     RUN_TEST(test_vnc_service_accepted);
     RUN_TEST(test_random_service_rejected);
     RUN_TEST(test_empty_service_rejected);
