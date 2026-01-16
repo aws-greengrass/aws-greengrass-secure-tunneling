@@ -11,15 +11,6 @@ static uint16_t get_port_from_service(GgBuffer service) {
     if (gg_buffer_eq(service, GG_STR("SSH"))) {
         return 22;
     }
-    if (gg_buffer_eq(service, GG_STR("HTTP"))) {
-        return 80;
-    }
-    if (gg_buffer_eq(service, GG_STR("HTTPS"))) {
-        return 443;
-    }
-    if (gg_buffer_eq(service, GG_STR("RDP"))) {
-        return 3389;
-    }
     if (gg_buffer_eq(service, GG_STR("VNC"))) {
         return 5900;
     }

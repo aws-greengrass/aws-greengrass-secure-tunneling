@@ -4,8 +4,8 @@ A Greengrass component that enables secure tunneling to IoT devices using AWS
 IoT Device Management Secure Tunneling service.
 
 This component listens for tunnel notifications and automatically establishes
-secure tunnels using the localproxy client, supporting services like SSH, HTTP,
-HTTPS, RDP, and VNC.
+secure tunnels using the localproxy client, supporting services like SSH and
+VNC.
 
 ## Quick Start
 
@@ -42,9 +42,6 @@ Tunnel timeout duration in seconds.
 | Service | Port |
 | ------- | ---- |
 | SSH     | 22   |
-| HTTP    | 80   |
-| HTTPS   | 443  |
-| RDP     | 3389 |
 | VNC     | 5900 |
 
 ## Resource Usage
