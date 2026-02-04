@@ -25,6 +25,39 @@ Once deployed, create tunnels via the AWS Console:
 4. Wait for connection to establish
 5. Access your device through the web UI
 
+## AWS CLI Alternative
+
+Create a tunnel:
+
+```bash
+aws iotsecuretunneling open-tunnel \
+    --destination-config thingName=<YOUR_THING_NAME>,services=SSH
+```
+
+List tunnels:
+
+```bash
+aws iotsecuretunneling list-tunnels
+```
+
+Describe a tunnel:
+
+```bash
+aws iotsecuretunneling describe-tunnel --tunnel-id <TUNNEL_ID>
+```
+
+Close a tunnel:
+
+```bash
+aws iotsecuretunneling close-tunnel --tunnel-id <TUNNEL_ID>
+```
+
+Connect using localproxy with the source access token:
+
+```bash
+./localproxy -r <REGION> -s <SOURCE_ACCESS_TOKEN> -d localhost:22
+```
+
 ## Additional Resources
 
 - [AWS Secure Tunneling Tutorial](https://docs.aws.amazon.com/iot/latest/developerguide/tunneling-tutorial-quick-setup.html)

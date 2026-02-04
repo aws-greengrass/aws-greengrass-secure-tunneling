@@ -3,11 +3,8 @@
 ## Overview
 
 This component requires a prebuilt
-[localproxy binary](https://github.com/aws-samples/aws-iot-securetunneling-localproxy/tree/main)
+[localproxy binary version >=v3.2.0](https://github.com/aws-samples/aws-iot-securetunneling-localproxy/tree/main)
 from AWS IoT Secure Tunneling.
-
-Tested with
-[commit feb59e2](https://github.com/aws-samples/aws-iot-securetunneling-localproxy/commit/feb59e268c8f4f1c7450f3a510963e84cc397ac7).
 
 If you want arm64, arm7l or x86 linux build these are available as pre-built
 binaries with the repo's
@@ -22,24 +19,31 @@ target device. For cross-compilation, see the
 ### Install Dependencies
 
 ```sh
-sudo apt update
+sudo apt-get update && sudo apt-get install -y build-essential cmake wget git libssl-dev zlib1g-dev
 
-# Install boost 1.87
-wget https://archives.boost.io/release/1.87.0/source/boost_1_87_0.tar.gz -O /tmp/boost_1_87_0.tar.gz
-tar xzvf /tmp/boost_1_87_0.tar.gz
-cd boost_1_87_0
-./bootstrap.sh
-sudo ./b2 install link=static
+# Install Boost 1.87.0
+wget -q https://archives.boost.io/release/1.87.0/source/boost_1_87_0.tar.gz -O boost.tar.gz
+tar xzf boost.tar.gz && cd boost_1_87_0
+./bootstrap.sh --prefix=/usr/local
+sudo ./b2 install link=static -j$(nproc)
+cd ..
 
-# Install other dependencies
-sudo apt install zlib1g protobuf-compiler libprotobuf-dev libssl-dev
+# Install Protobuf 3.17.3
+wget -q https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/protobuf-all-3.17.3.tar.gz -O protobuf.tar.gz
+tar xzf protobuf.tar.gz && cd protobuf-3.17.3
+mkdir -p build && cd build
+cmake ../cmake -DCMAKE_INSTALL_PREFIX=/usr/local -Dprotobuf_BUILD_TESTS=OFF
+make -j$(nproc) && sudo make install
+cd ../..
 ```
 
 ### Build
 
 ```sh
-cmake -B build -DCMAKE_BUILD_TYPE=Release -DLINK_STATIC_OPENSSL=OFF -DBUILD_TESTS=OFF
-make -C build/
+mkdir -p build && cd build
+cmake .. -DBUILD_TESTS=OFF -DLINK_STATIC_OPENSSL=OFF
+make -j$(nproc)
+strip bin/localproxy
 ```
 
 The resulting binary should be approximately 4MB.
