@@ -10,6 +10,7 @@ DBUILD
 DCMAKE
 DEPENDS
 DLINK
+Dprotobuf
 endforeach
 endif
 endmacro
@@ -28,6 +29,7 @@ GLIBCXX
 greengrass
 greengrassv2
 INTERPROCEDURAL
+iotsecuretunneling
 iwyu
 journalctl
 libc
