@@ -1,3 +1,5 @@
 - symbol: ["pthread_mutex_t", "private", "<sys/types.h>", "public"]
 - symbol: ["pthread_t", "private", "<sys/types.h>", "public"]
 - symbol: ["PR_SET_PDEATHSIG", "private", "<sys/prctl.h>", "public"]
+- symbol: ["EINTR", "private", "<errno.h>", "public"]
+- symbol: ["CLOCK_MONOTONIC", "private", "<time.h>", "public"]

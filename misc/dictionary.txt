@@ -14,6 +14,7 @@ Dprotobuf
 endforeach
 endif
 endmacro
+EPOLLIN
 fdata
 FETCHCONTENT
 fexecve

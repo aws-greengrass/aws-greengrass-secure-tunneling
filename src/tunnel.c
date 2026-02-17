@@ -2,6 +2,7 @@
 #include "tunnel.h"
 #include "secure-tunnel.h"
 #include "tunnel_notification_parser.h"
+#include <errno.h>
 #include <fcntl.h>
 #include <gg/buffer.h>
 #include <gg/cleanup.h>
@@ -11,9 +12,12 @@
 #include <gg/vector.h>
 #include <pthread.h>
 #include <signal.h>
+#include <sys/epoll.h>
 #include <sys/prctl.h>
+#include <sys/syscall.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <time.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -65,12 +69,74 @@ static int prepare_localproxy_fd(void) {
     return fd;
 }
 
+static void wait_for_child(
+    int pidfd, int epoll_fd, pid_t pid, int timeout_seconds
+) {
+    struct timespec start;
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    int timeout_ms = timeout_seconds * 1000;
+    int ret;
+    struct epoll_event event;
+
+    do {
+        ret = epoll_wait(epoll_fd, &event, 1, timeout_ms);
+        if (ret < 0 && errno == EINTR) {
+            clock_gettime(CLOCK_MONOTONIC, &now);
+            int elapsed_ms
+                = (int) (((now.tv_sec - start.tv_sec) * 1000)
+                         + ((now.tv_nsec - start.tv_nsec) / 1000000));
+            timeout_ms = (timeout_seconds * 1000) - elapsed_ms;
+            if (timeout_ms <= 0) {
+                ret = 0;
+                break;
+            }
+        }
+    } while (ret < 0 && errno == EINTR);
+
+    close(epoll_fd);
+    int status;
+
+    if (ret < 0) {
+        GG_LOGE("epoll_wait failed, errno: %d", errno);
+        // Kill entire process group to clean up localproxy and any children.
+        killpg(pid, SIGKILL);
+    } else if (ret == 0) {
+        GG_LOGW(
+            "Tunnel timeout (%d seconds) reached, killing localproxy",
+            timeout_seconds
+        );
+        // Kill entire process group to clean up localproxy and any children.
+        killpg(pid, SIGKILL);
+    } else {
+        close(pidfd);
+        waitpid(pid, &status, 0);
+        if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
+            GG_LOGI("Tunnel completed successfully");
+        } else {
+            GG_LOGW("Tunnel exited with status: %d", status);
+        }
+        return;
+    }
+
+    close(pidfd);
+    waitpid(pid, &status, 0);
+}
+
 static void execute_localproxy(
-    int localproxy_fd, const char *const *args, const char *access_token
+    int localproxy_fd,
+    const char *const *args,
+    const char *access_token,
+    int timeout_seconds
 ) {
     // Fork and execute localproxy
     pid_t pid = fork();
     if (pid == 0) {
+        // Child process block
+
+        // Create new process group so we can kill all children
+        setpgid(0, 0);
+
         // Child process: kill localproxy if parent dies
         prctl(PR_SET_PDEATHSIG, SIGTERM);
 
@@ -90,17 +156,36 @@ static void execute_localproxy(
         _exit(1);
 
     } else if (pid > 0) {
-        // Parent process: wait for completion
-        int status;
-        waitpid(pid, &status, 0);
+        // Parent process block
 
-        if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
-            GG_LOGI("Tunnel completed successfully");
-        } else {
-            GG_LOGW("Tunnel exited with status: %d", status);
+        // Get a file descriptor for the child process to use with epoll.
+        int pidfd = (int) syscall(SYS_pidfd_open, pid, 0);
+        int status = 0;
+
+        if (pidfd == -1) {
+            GG_LOGE("pidfd_open failed");
+            // Use killpg to signal the entire process group, ensuring any
+            // grandchildren spawned by localproxy are also killed.
+            killpg(pid, SIGKILL);
+            // Reap the child to prevent zombie process.
+            waitpid(pid, &status, 0);
+            return;
         }
-    } else {
-        GG_LOGE("Failed to fork process");
+
+        int epoll_fd = epoll_create1(EPOLL_CLOEXEC);
+        if (epoll_fd == -1) {
+            GG_LOGE("epoll_create1 failed");
+            // Kill entire process group.
+            killpg(pid, SIGKILL);
+            close(pidfd);
+            // Reap the child to prevent zombie process.
+            waitpid(pid, &status, 0);
+            return;
+        }
+
+        struct epoll_event ev = { .events = EPOLLIN, .data.fd = pidfd };
+        epoll_ctl(epoll_fd, EPOLL_CTL_ADD, pidfd, &ev);
+        wait_for_child(pidfd, epoll_fd, pid, timeout_seconds);
     }
 }
 
@@ -138,7 +223,12 @@ static void *tunnel_worker(void *arg) {
         "Using localproxy for service: %s on port %u", ctx->service, ctx->port
     );
 
-    execute_localproxy(localproxy_fd, args, ctx->access_token);
+    execute_localproxy(
+        localproxy_fd,
+        args,
+        ctx->access_token,
+        tunnel_config->tunnel_timeout_seconds
+    );
 
     return NULL;
 }
