@@ -23,6 +23,7 @@ void test_nonexistent_binary_cleanup(void);
 void test_nonexecutable_binary_cleanup(void);
 void test_crashing_binary_cleanup(void);
 void test_max_tunnel_slots_enforced(void);
+void test_tunnel_timeout_kills_localproxy(void);
 
 static int initial_fd_count;
 
@@ -135,34 +136,6 @@ void test_nonexecutable_binary_cleanup(void) {
     TEST_ASSERT_EQUAL_INT(initial_fd_count, count_open_fds());
 }
 
-// Test crashing localproxy binary
-void test_crashing_binary_cleanup(void) {
-    // Create temp directory with crashing localproxy script
-    mkdir(TEST_DIR, 0755);
-    FILE *f = fopen(TEST_DIR "/localproxy", "w");
-    TEST_ASSERT_NOT_NULL(f);
-    fprintf(f, "#!/bin/sh\nkill -SEGV $$\n");
-    fclose(f);
-    chmod(TEST_DIR "/localproxy", 0755);
-
-    SecureTunnelConfig *config = make_config(TEST_DIR);
-    uint8_t arena_mem[1024];
-    GgMap notification
-        = mock_create_tunnel_notification(arena_mem, sizeof(arena_mem));
-
-    GgError ret = handle_tunnel_notification(notification, config);
-    TEST_ASSERT_EQUAL(GG_ERR_OK, ret);
-
-    // Wait for worker thread to complete by polling active_tunnels
-    for (int i = 0; i < 50 && active_tunnels > 0; i++) {
-        usleep(100000); // 100ms
-    }
-
-    TEST_ASSERT_EQUAL_INT(0, active_tunnels);
-    TEST_ASSERT_EQUAL_UINT32(0, tunnel_slots_mask);
-    TEST_ASSERT_EQUAL_INT(initial_fd_count, count_open_fds());
-}
-
 // Test that 21st tunnel is rejected when 20 slots are occupied
 void test_max_tunnel_slots_enforced(void) {
     SecureTunnelConfig *config
@@ -183,11 +156,73 @@ void test_max_tunnel_slots_enforced(void) {
     TEST_ASSERT_EQUAL_INT(MAX_TUNNEL_SLOTS, active_tunnels);
 }
 
+// Test that tunnel timeout kills a long-running localproxy
+void test_tunnel_timeout_kills_localproxy(void) {
+    // Create a localproxy script that sleeps and logs its PID
+    mkdir(TEST_DIR, 0755);
+    FILE *f = fopen(TEST_DIR "/localproxy", "w");
+    TEST_ASSERT_NOT_NULL(f);
+    fprintf(f, "#!/bin/sh\necho $$ > /tmp/localproxy.pid\nsleep 3600\n");
+    fclose(f);
+    chmod(TEST_DIR "/localproxy", 0755);
+
+    SecureTunnelConfig *config = make_config(TEST_DIR);
+    config->tunnel_timeout_seconds = 5;
+
+    uint8_t arena_mem[1024];
+    GgMap notification
+        = mock_create_tunnel_notification(arena_mem, sizeof(arena_mem));
+
+    GgError ret = handle_tunnel_notification(notification, config);
+    TEST_ASSERT_EQUAL(GG_ERR_OK, ret);
+
+    // Wait for timeout to trigger
+    for (int i = 0; i < 70 && active_tunnels > 0; i++) {
+        usleep(100000); // 100ms
+    }
+
+    TEST_ASSERT_EQUAL_INT(0, active_tunnels);
+    TEST_ASSERT_EQUAL_UINT32(0, tunnel_slots_mask);
+    TEST_ASSERT_EQUAL_INT(initial_fd_count, count_open_fds());
+}
+
+// Test crashing localproxy binary
+void test_crashing_binary_cleanup(void) {
+    // Create temp directory with crashing localproxy script
+    mkdir(TEST_DIR, 0755);
+    FILE *f = fopen(TEST_DIR "/localproxy", "w");
+    TEST_ASSERT_NOT_NULL(f);
+    fprintf(f, "#!/bin/sh\nkill -SEGV $$\n");
+    fclose(f);
+    chmod(TEST_DIR "/localproxy", 0755);
+
+    SecureTunnelConfig *config = make_config(TEST_DIR);
+    uint8_t arena_mem[1024];
+    GgMap notification
+        = mock_create_tunnel_notification(arena_mem, sizeof(arena_mem));
+
+    GgError ret = handle_tunnel_notification(notification, config);
+    TEST_ASSERT_EQUAL(GG_ERR_OK, ret);
+
+    // Wait for timeout to trigger
+    for (int i = 0; i < 40 && active_tunnels > 0; i++) {
+        usleep(100000); // 100ms
+    }
+
+    TEST_ASSERT_EQUAL_INT(0, active_tunnels);
+    TEST_ASSERT_EQUAL_UINT32(0, tunnel_slots_mask);
+    TEST_ASSERT_EQUAL_INT(initial_fd_count, count_open_fds());
+
+    unlink(TEST_DIR "/localproxy");
+    rmdir(TEST_DIR);
+}
+
 int main(void) {
     UNITY_BEGIN();
     RUN_TEST(test_nonexistent_binary_cleanup);
     RUN_TEST(test_nonexecutable_binary_cleanup);
     RUN_TEST(test_crashing_binary_cleanup);
     RUN_TEST(test_max_tunnel_slots_enforced);
+    RUN_TEST(test_tunnel_timeout_kills_localproxy);
     return UNITY_END();
 }
