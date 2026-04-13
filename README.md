@@ -9,11 +9,17 @@ VNC.
 
 ## Quick Start
 
+Please check the release build under
+[GitHub releases](https://github.com/aws-greengrass/aws-greengrass-component-sdk/releases).
+If your target OS and architecture are already available, proceed directly to
+step 4 below.
+
 1. [Build localproxy](docs/localproxy.md)
 2. [Build the component](docs/BUILD.md)
 3. [Set up AWS permissions](docs/deployment.md#prerequisites)
 4. Deploy to your device:
    - [Local deployment](docs/deployment.md#local-deployment)
+   - [Cloud deployment](docs/deployment.md#cloud-deployment)
    - [GDK deployment](docs/gdk.md) (recommended)
 5. [Create and use tunnels](docs/usage.md)
 
