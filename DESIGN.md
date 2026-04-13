@@ -38,19 +38,9 @@ using the previously offered Greengrass Secure Tunneling component.
 
 ## Architecture
 
-![SHH_after_setup](SHH_after_setup.jpg)
-
 ### High-Level Architecture
 
-```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   AWS Console   │    │   AWS IoT Core   │    │  Greengrass     │
-│                 │    │                  │    │  Device         │
-│ Create Tunnel   ├────┤ Secure Tunneling ├────┤                 │
-│ Manage Sessions │    │ Service          │    │ SecureTunneling │
-└─────────────────┘    └──────────────────┘    │ Component       │
-                                               └─────────────────┘
-```
+![SHH_after_setup](docs/Images/SHH_after_setup.jpg)
 
 ### Component Architecture
 
