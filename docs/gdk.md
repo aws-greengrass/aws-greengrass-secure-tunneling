@@ -59,6 +59,12 @@ Upload to S3 and create the component version:
 gdk component publish
 ```
 
+To use a custom S3 bucket, specify it with the `--bucket` option:
+
+```sh
+gdk component publish --bucket your-bucket-name
+```
+
 ## Deploy
 
 Create a deployment:

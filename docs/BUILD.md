@@ -25,7 +25,14 @@ build instructions.
 
 ## Build Steps
 
+### Quick build and publish with GDK (recommended)
+
+Follow the instructions from the [GDK CLI](../docs/gdk.md) to build and publish
+instead of the following.
+
 ### Configure
+
+If you prefer more manual configuration, follow the instructions from here:
 
 ```sh
 cmake -B build -D CMAKE_BUILD_TYPE=MinSizeRel
@@ -55,15 +62,6 @@ Or use the build script:
 ```
 
 ## Component Structure
-
-### For GDK deployment (recommended)
-
-Use the [GDK CLI](../docs/gdk.md) to build and publish:
-
-```sh
-gdk component build
-gdk component publish
-```
 
 ### For local deployment
 
