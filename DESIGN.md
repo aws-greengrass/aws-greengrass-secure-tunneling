@@ -20,6 +20,8 @@ that:
 - Eliminates the need for inbound firewall rule configuration
 - Works with devices behind NAT and firewalls using only outbound connections
 
+![SHH_before_setup](docs/Images/SHH_before_setup.jpg)
+
 To use AWS IoT Secure Tunneling, devices need:
 
 1. A secure method for receiving access tokens used for authentication
@@ -35,6 +37,8 @@ This open source secure tunneling component is a drop in replacement for fleets
 using the previously offered Greengrass Secure Tunneling component.
 
 ## Architecture
+
+![SHH_after_setup](SHH_after_setup.jpg)
 
 ### High-Level Architecture
 
