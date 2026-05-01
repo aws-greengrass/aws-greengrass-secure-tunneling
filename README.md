@@ -22,6 +22,7 @@ step 4 below.
    - [Cloud deployment](docs/deployment.md#cloud-deployment)
    - [GDK deployment](docs/gdk.md) (recommended)
 5. [Create and use tunnels](docs/usage.md)
+6. [Running behind a web proxy](docs/Proxy.md) (optional)
 
 ## Configuration
 
