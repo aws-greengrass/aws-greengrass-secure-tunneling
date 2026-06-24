@@ -78,6 +78,23 @@ Install on Ubuntu:
 sudo apt install libc6 libstdc++6 libgcc-s1 libssl3
 ```
 
+## Automated Builds with CI/CD
+
+To automate the build process for the secure tunneling binaries, you can
+reference the following sample CI/CD workflow files:
+
+- **Secure tunnel component**:
+  [`.github/workflows/release.yml`](https://github.com/aws-greengrass/aws-greengrass-secure-tunneling/blob/main/.github/workflows/release.yml)
+  in the `aws-greengrass-secure-tunneling` repository.
+- **Local proxy**:
+  [`.github/workflows/build-and-test.yml`](https://github.com/aws-samples/aws-iot-securetunneling-localproxy/blob/main/.github/workflows/build-and-test.yml)
+  in the `aws-iot-securetunneling-localproxy` repository.
+
+If you need to build the localproxy binary for a different target architecture,
+see the
+[cross-compilation guide](https://github.com/aws-samples/aws-iot-securetunneling-localproxy#cross-compilation)
+in the local proxy repository.
+
 ## License
 
 See [LICENSE](LICENSE) file for details.
