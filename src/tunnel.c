@@ -156,6 +156,13 @@ static void execute_localproxy(
     } else if (pid > 0) {
         // Parent process block
 
+        // Also set the child's process group from the parent side to close
+        // the race window between fork() and the child's own setpgid(0, 0)
+        // call. Whichever of the two setpgid calls executes first wins; the
+        // second is a harmless no-op (EACCES/EPERM here are expected and
+        // ignored since the child may have already set its own group).
+        setpgid(pid, pid);
+
         // Get a file descriptor for the child process to use with epoll.
         int pidfd = (int) syscall(SYS_pidfd_open, pid, 0);
         int status = 0;
