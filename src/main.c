@@ -10,11 +10,13 @@
 
 #include "secure-tunnel.h"
 #include <argp.h>
+#include <errno.h>
 #include <gg/buffer.h>
 #include <gg/error.h>
 #include <gg/log.h>
 #include <gg/sdk.h>
 #include <gg/utils.h>
+#include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -81,21 +83,27 @@ static error_t arg_parser(int key, char *arg, struct argp_state *state) {
         args->region = gg_buffer_from_null_term(arg);
         break;
     case 'm': {
-        int val = atoi(arg);
-        if (val <= 0) {
+        char *end = NULL;
+        errno = 0;
+        long val = strtol(arg, &end, 10);
+        if (errno != 0 || end == arg || *end != '\0' || val <= 0
+            || val > INT_MAX) {
             GG_LOGE("Error: max-tunnels must be a positive integer");
             return ARGP_ERR_UNKNOWN;
         }
-        args->max_concurrent_tunnels = val;
+        args->max_concurrent_tunnels = (int) val;
         break;
     }
     case 'T': {
-        int val = atoi(arg);
-        if (val <= 0) {
+        char *end = NULL;
+        errno = 0;
+        long val = strtol(arg, &end, 10);
+        if (errno != 0 || end == arg || *end != '\0' || val <= 0
+            || val > INT_MAX) {
             GG_LOGE("Error: timeout must be a positive integer");
             return ARGP_ERR_UNKNOWN;
         }
-        args->tunnel_timeout_seconds = val;
+        args->tunnel_timeout_seconds = (int) val;
         break;
     }
     case 'a':
