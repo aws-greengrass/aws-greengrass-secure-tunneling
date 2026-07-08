@@ -52,17 +52,15 @@ static int prepare_localproxy_fd(void) {
     }
     localproxy_path[path_vec.buf.len] = '\0';
 
-    int fd = open(localproxy_path, O_RDONLY);
-    if (fd == -1) {
-        GG_LOGE("Localproxy not found in artifact directory");
+    // Early sanity check for a clearer error message.
+    if (faccessat(AT_FDCWD, localproxy_path, X_OK, 0) != 0) {
+        GG_LOGE("Localproxy binary is not executable: %s", localproxy_path);
         return -1;
     }
 
-    if (faccessat(AT_FDCWD, "/proc/self/fd", X_OK, 0) != 0) {
-        GG_LOGE(
-            "Cannot access localproxy binary - execute permission check failed"
-        );
-        close(fd);
+    int fd = open(localproxy_path, O_RDONLY);
+    if (fd == -1) {
+        GG_LOGE("Localproxy not found in artifact directory");
         return -1;
     }
 
