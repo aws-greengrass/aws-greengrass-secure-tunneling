@@ -58,7 +58,7 @@ static int prepare_localproxy_fd(void) {
         return -1;
     }
 
-    int fd = open(localproxy_path, O_RDONLY);
+    int fd = open(localproxy_path, O_RDONLY | O_NOFOLLOW);
     if (fd == -1) {
         GG_LOGE("Localproxy not found in artifact directory");
         return -1;
