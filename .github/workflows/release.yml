@@ -1,30 +1,61 @@
-name: Build and Release
+name: Release Pipeline
 
+# This workflow is intentionally manual-only and requires an explicit
+# localproxy release tag for reproducibility.
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
-  pull_request:
+    inputs:
+      localproxy_ref:
+        description:
+          "Release tag of aws-samples/aws-iot-securetunneling-localproxy to
+          build (e.g. v3.3.0)"
+        required: true
+        type: string
 
 permissions:
   contents: read
 
+env:
+  LOCALPROXY_REPO: https://github.com/aws-samples/aws-iot-securetunneling-localproxy.git
+
 jobs:
-  build:
-    name: Build ${{ matrix.arch }}
+  package:
+    name: Package ${{ matrix.arch }}
     runs-on: ${{ matrix.runner }}
+    # Building Boost 1.87 + Protobuf from source takes significant time
+    timeout-minutes: 120
     strategy:
+      fail-fast: false
       matrix:
         include:
+          # Deliberate use of uname -m style arch labels (aarch64 not arm64)
+          # to match the Greengrass component artifact naming convention.
           - arch: x86_64
             runner: ubuntu-22.04
-          - arch: arm64
+          - arch: aarch64
             runner: ubuntu-22.04-arm
 
+    env:
+      LOCALPROXY_REF: ${{ inputs.localproxy_ref }}
+
     steps:
+      - name: Validate localproxy ref
+        run: |
+          if [ -z "$LOCALPROXY_REF" ]; then
+            echo "ERROR: LOCALPROXY_REF is empty. You must supply a localproxy release tag when triggering this workflow."
+            exit 1
+          fi
+          # Allowlist git-ref-safe characters only. The ref is user-supplied via
+          # workflow_dispatch and is interpolated into a shell command, so reject
+          # anything that could word-split or inject.
+          if ! [[ "$LOCALPROXY_REF" =~ ^[A-Za-z0-9._/-]+$ ]]; then
+            echo "ERROR: LOCALPROXY_REF contains invalid characters: $LOCALPROXY_REF"
+            exit 1
+          fi
+          echo "Building with LOCALPROXY_REF=$LOCALPROXY_REF"
+
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set version
         id: version
@@ -33,41 +64,95 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential cmake pkg-config git libssl-dev
+          sudo apt-get install -y build-essential cmake pkg-config git curl zip libssl-dev zlib1g-dev
 
-      - name: Build
+      - name: Build secure-tunnel
         run: |
           cmake -B build -DCMAKE_BUILD_TYPE=MinSizeRel
           make -C build -j$(nproc)
           strip build/bin/aws-greengrass-secure-tunnel
 
-      - name: Save package
+      - name: Clone and build localproxy
         run: |
-          mkdir -p ${{ github.workspace }}/zipfile/
-          cp build/bin/aws-greengrass-secure-tunnel ${{ github.workspace }}/zipfile/
+          # Clone outside this repo tree so file(GLOB_RECURSE src/*.c) in
+          # CMakeLists.txt never picks up localproxy sources.
+          git clone --depth 1 --branch "$LOCALPROXY_REF" "$LOCALPROXY_REPO" "$RUNNER_TEMP/localproxy"
+          cd "$RUNNER_TEMP/localproxy"
+          mkdir -p build && cd build
+          cmake .. -DLINK_STATIC_OPENSSL=OFF -DLOCALPROXY_DEP_MODE=fetch
+          make -j$(nproc)
+          strip bin/localproxy
 
-      - name: md5sums
-        run: md5sum ${{ github.workspace }}/zipfile/*
+      - name: Verify binaries
+        run: |
+          echo "--- secure-tunnel binary ---"
+          test -f build/bin/aws-greengrass-secure-tunnel || { echo "ERROR: aws-greengrass-secure-tunnel not found"; exit 1; }
+          file build/bin/aws-greengrass-secure-tunnel
+
+          echo "--- localproxy binary ---"
+          test -f "$RUNNER_TEMP/localproxy/build/bin/localproxy" || { echo "ERROR: localproxy not found"; exit 1; }
+          file "$RUNNER_TEMP/localproxy/build/bin/localproxy"
+
+      - name: Package bundle
+        id: pkg
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          ARCH="${{ matrix.arch }}"
+          ZIPNAME="aws.greengrass.securetunneling-${ARCH}-${VERSION}.zip"
+
+          mkdir -p staging
+          # Both binaries at zip root — matches gdk-build.sh:22 and what
+          # src/tunnel.c expects via --artifact-path at runtime.
+          cp build/bin/aws-greengrass-secure-tunnel staging/
+          cp "$RUNNER_TEMP/localproxy/build/bin/localproxy" staging/
+
+          cd staging
+          zip -j "../${ZIPNAME}" ./*
+          cd ..
+
+          echo "--- zip contents ---"
+          unzip -l "${ZIPNAME}"
+          echo "ZIPNAME=${ZIPNAME}" >> $GITHUB_OUTPUT
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name:
-            aws-greengrass-secure-tunnel-${{ matrix.arch }}-${{
+            aws.greengrass.securetunneling-${{ matrix.arch }}-${{
             steps.version.outputs.VERSION }}
-          path: ${{ github.workspace }}/zipfile/*
+          path: ${{ steps.pkg.outputs.ZIPNAME }}
           retention-days: 2
+          if-no-files-found: error
 
-  build-armv7:
-    name: Build armv7
-    runs-on: ubuntu-latest
+  package-armv7l:
+    name: Package armv7l
+    runs-on: ubuntu-22.04
+    timeout-minutes: 360
+
+    env:
+      LOCALPROXY_REF: ${{ inputs.localproxy_ref }}
 
     steps:
+      - name: Validate localproxy ref
+        run: |
+          if [ -z "$LOCALPROXY_REF" ]; then
+            echo "ERROR: LOCALPROXY_REF is empty. You must supply a localproxy release tag when triggering this workflow."
+            exit 1
+          fi
+          # Allowlist git-ref-safe characters only. The ref is user-supplied via
+          # workflow_dispatch and is interpolated into a shell command, so reject
+          # anything that could word-split or inject.
+          if ! [[ "$LOCALPROXY_REF" =~ ^[A-Za-z0-9._/-]+$ ]]; then
+            echo "ERROR: LOCALPROXY_REF contains invalid characters: $LOCALPROXY_REF"
+            exit 1
+          fi
+          echo "Building with LOCALPROXY_REF=$LOCALPROXY_REF"
+
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
       - name: Set version
         id: version
@@ -78,28 +163,50 @@ jobs:
           docker run --rm --platform=linux/arm/v7 \
             -v $PWD:/workspace \
             -w /workspace \
+            -e LOCALPROXY_REF \
+            -e LOCALPROXY_REPO \
             arm32v7/ubuntu:22.04 \
             bash -c "
+              set -e && \
               apt-get update && \
-              apt-get install -y build-essential cmake pkg-config git libssl-dev && \
+              apt-get install -y build-essential cmake pkg-config git curl zip libssl-dev zlib1g-dev && \
               cmake -B build -DCMAKE_BUILD_TYPE=MinSizeRel && \
               make -C build -j\$(nproc) && \
-              strip build/bin/aws-greengrass-secure-tunnel
+              strip build/bin/aws-greengrass-secure-tunnel && \
+              git clone --depth 1 --branch \"\$LOCALPROXY_REF\" \"\$LOCALPROXY_REPO\" /tmp/localproxy && \
+              cd /tmp/localproxy && \
+              mkdir -p build && cd build && \
+              cmake .. -DLINK_STATIC_OPENSSL=OFF -DLOCALPROXY_DEP_MODE=fetch && \
+              make -j\$(nproc) && \
+              strip bin/localproxy && \
+              echo --- secure-tunnel binary --- && \
+              test -f /workspace/build/bin/aws-greengrass-secure-tunnel || { echo ERROR: aws-greengrass-secure-tunnel not found; exit 1; } && \
+              file /workspace/build/bin/aws-greengrass-secure-tunnel && \
+              echo --- localproxy binary --- && \
+              test -f /tmp/localproxy/build/bin/localproxy || { echo ERROR: localproxy not found; exit 1; } && \
+              file /tmp/localproxy/build/bin/localproxy && \
+              mkdir -p /workspace/staging && \
+              cp /workspace/build/bin/aws-greengrass-secure-tunnel /workspace/staging/ && \
+              cp /tmp/localproxy/build/bin/localproxy /workspace/staging/ && \
+              cd /workspace/staging && \
+              zip -j /workspace/aws.greengrass.securetunneling-armv7l-\$(cat /workspace/version).zip ./* && \
+              echo --- zip contents --- && \
+              unzip -l /workspace/aws.greengrass.securetunneling-armv7l-\$(cat /workspace/version).zip
             "
 
-      - name: Save package
-        run: |
-          mkdir -p ${{ github.workspace }}/zipfile/
-          cp build/bin/aws-greengrass-secure-tunnel ${{ github.workspace }}/zipfile/
-
-      - name: md5sums
-        run: md5sum ${{ github.workspace }}/zipfile/*
+      # The container runs as root and writes build/, staging/ and the zip into
+      # the bind-mounted checkout, so hand ownership back to the runner user.
+      - name: Fix file ownership
+        run: sudo chown -R "$(id -u):$(id -g)" .
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name:
-            aws-greengrass-secure-tunnel-armv7-${{
-            steps.version.outputs.VERSION}}
-          path: ${{ github.workspace }}/zipfile/*
+            aws.greengrass.securetunneling-armv7l-${{
+            steps.version.outputs.VERSION }}
+          path:
+            aws.greengrass.securetunneling-armv7l-${{
+            steps.version.outputs.VERSION }}.zip
           retention-days: 2
+          if-no-files-found: error
