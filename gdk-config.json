@@ -8,7 +8,7 @@
         "custom_build_command": [
           "bash",
           "-c",
-          "cmake -B build -DCMAKE_BUILD_TYPE=MinSizeRel && make -C build -j$(nproc) && ./gdk-build.sh"
+          "cmake -B build -DCMAKE_BUILD_TYPE=MinSizeRel && make -C build -j$(nproc) && LOCALPROXY_REF=main ./gdk-build.sh"
         ]
       },
       "publish": {
