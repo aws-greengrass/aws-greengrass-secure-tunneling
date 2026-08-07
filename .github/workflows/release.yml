@@ -93,26 +93,15 @@ jobs:
           test -f "$RUNNER_TEMP/localproxy/build/bin/localproxy" || { echo "ERROR: localproxy not found"; exit 1; }
           file "$RUNNER_TEMP/localproxy/build/bin/localproxy"
 
-      - name: Package bundle
-        id: pkg
+      - name: Stage bundle contents
         run: |
-          VERSION="${{ steps.version.outputs.VERSION }}"
-          ARCH="${{ matrix.arch }}"
-          ZIPNAME="aws.greengrass.securetunneling-${ARCH}-${VERSION}.zip"
-
           mkdir -p staging
-          # Both binaries at zip root — matches gdk-build.sh:22 and what
-          # src/tunnel.c expects via --artifact-path at runtime.
+          #Stage binaries for zip creation
           cp build/bin/aws-greengrass-secure-tunnel staging/
           cp "$RUNNER_TEMP/localproxy/build/bin/localproxy" staging/
 
-          cd staging
-          zip -j "../${ZIPNAME}" ./*
-          cd ..
-
-          echo "--- zip contents ---"
-          unzip -l "${ZIPNAME}"
-          echo "ZIPNAME=${ZIPNAME}" >> $GITHUB_OUTPUT
+          echo "--- staged binaries ---"
+          ls -l staging
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
@@ -120,7 +109,7 @@ jobs:
           name:
             aws.greengrass.securetunneling-${{ matrix.arch }}-${{
             steps.version.outputs.VERSION }}
-          path: ${{ steps.pkg.outputs.ZIPNAME }}
+          path: staging/*
           retention-days: 2
           if-no-files-found: error
 
@@ -188,14 +177,13 @@ jobs:
               mkdir -p /workspace/staging && \
               cp /workspace/build/bin/aws-greengrass-secure-tunnel /workspace/staging/ && \
               cp /tmp/localproxy/build/bin/localproxy /workspace/staging/ && \
-              cd /workspace/staging && \
-              zip -j /workspace/aws.greengrass.securetunneling-armv7l-\$(cat /workspace/version).zip ./* && \
-              echo --- zip contents --- && \
-              unzip -l /workspace/aws.greengrass.securetunneling-armv7l-\$(cat /workspace/version).zip
+              echo --- staged binaries --- && \
+              ls -l /workspace/staging
             "
 
-      # The container runs as root and writes build/, staging/ and the zip into
-      # the bind-mounted checkout, so hand ownership back to the runner user.
+      # The container runs as root and writes build/ and staging/ into the
+      # bind-mounted checkout, so hand ownership back to the runner user before
+      # upload-artifact reads them.
       - name: Fix file ownership
         run: sudo chown -R "$(id -u):$(id -g)" .
 
@@ -205,8 +193,6 @@ jobs:
           name:
             aws.greengrass.securetunneling-armv7l-${{
             steps.version.outputs.VERSION }}
-          path:
-            aws.greengrass.securetunneling-armv7l-${{
-            steps.version.outputs.VERSION }}.zip
+          path: staging/*
           retention-days: 2
           if-no-files-found: error
