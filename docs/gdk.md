@@ -10,7 +10,10 @@ This guide covers deploying the component using the Greengrass Development Kit
 - AWS credentials configured
   - Easiest is to export a permissive role's token
 - S3 bucket for component artifacts
-- Built localproxy binary (see [localproxy.md](localproxy.md))
+- Build toolchain for compiling the component and localproxy: `git`, `cmake`,
+  `make`, `zip`, `jq` and a C++ compiler
+  - On Debian/Ubuntu:
+    `sudo apt-get install -y build-essential cmake git curl zip jq libssl-dev zlib1g-dev`
 
 Install GDK:
 
@@ -49,6 +52,21 @@ Build the component and create the artifact zip:
 
 ```sh
 gdk component build
+```
+
+This compiles the component binary, then builds `localproxy` from source and
+packages both into a single artifact zip. The localproxy revision is set by
+`LOCALPROXY_REF` in `gdk-config.json`, which defaults to `main`.
+
+The built binary is cached at `run/localproxy` and reused by later builds. To
+build a different revision or force a rebuild:
+
+```sh
+# Build a specific branch, tag or commit SHA
+LOCALPROXY_REF=<ref> gdk component build
+
+# Rebuild localproxy even though run/localproxy already exists
+LOCALPROXY_FORCE_REBUILD=1 gdk component build
 ```
 
 ## Publish
