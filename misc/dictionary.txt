@@ -10,6 +10,7 @@ DBUILD
 DCMAKE
 DEPENDS
 DLINK
+DLOCALPROXY
 Dprotobuf
 endforeach
 endif

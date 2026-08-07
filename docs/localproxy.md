@@ -20,28 +20,13 @@ target device. For cross-compilation, see the
 
 ```sh
 sudo apt-get update && sudo apt-get install -y build-essential cmake wget git libssl-dev zlib1g-dev
-
-# Install Boost 1.87.0
-wget -q https://archives.boost.io/release/1.87.0/source/boost_1_87_0.tar.gz -O boost.tar.gz
-tar xzf boost.tar.gz && cd boost_1_87_0
-./bootstrap.sh --prefix=/usr/local
-sudo ./b2 install link=static -j$(nproc)
-cd ..
-
-# Install Protobuf 3.17.3
-wget -q https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/protobuf-all-3.17.3.tar.gz -O protobuf.tar.gz
-tar xzf protobuf.tar.gz && cd protobuf-3.17.3
-mkdir -p build && cd build
-cmake ../cmake -DCMAKE_INSTALL_PREFIX=/usr/local -Dprotobuf_BUILD_TESTS=OFF
-make -j$(nproc) && sudo make install
-cd ../..
 ```
 
 ### Build
 
 ```sh
 mkdir -p build && cd build
-cmake .. -DBUILD_TESTS=OFF -DLINK_STATIC_OPENSSL=OFF
+cmake .. -DBUILD_TESTS=OFF -DLINK_STATIC_OPENSSL=OFF -DLOCALPROXY_DEP_MODE=fetch
 make -j$(nproc)
 strip bin/localproxy
 ```
