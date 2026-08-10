@@ -191,6 +191,8 @@ static void execute_localproxy(
         struct epoll_event ev = { .events = EPOLLIN, .data.fd = pidfd };
         epoll_ctl(epoll_fd, EPOLL_CTL_ADD, pidfd, &ev);
         wait_for_child(pidfd, epoll_fd, pid, timeout_seconds);
+    } else {
+        GG_LOGE("fork() failed, errno: %d", errno);
     }
 }
 
