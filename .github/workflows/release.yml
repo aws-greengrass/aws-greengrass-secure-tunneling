@@ -22,14 +22,11 @@ jobs:
   package:
     name: Package ${{ matrix.arch }}
     runs-on: ${{ matrix.runner }}
-    # Building Boost 1.87 + Protobuf from source takes significant time
     timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
         include:
-          # Deliberate use of uname -m style arch labels (aarch64 not arm64)
-          # to match the Greengrass component artifact naming convention.
           - arch: x86_64
             runner: ubuntu-22.04
           - arch: aarch64
@@ -156,28 +153,32 @@ jobs:
             -e LOCALPROXY_REPO \
             arm32v7/ubuntu:22.04 \
             bash -c "
-              set -e && \
-              apt-get update && \
-              apt-get install -y build-essential cmake pkg-config git curl zip libssl-dev zlib1g-dev && \
-              cmake -B build -DCMAKE_BUILD_TYPE=MinSizeRel && \
-              make -C build -j\$(nproc) && \
-              strip build/bin/aws-greengrass-secure-tunnel && \
-              git clone --depth 1 --branch \"\$LOCALPROXY_REF\" \"\$LOCALPROXY_REPO\" /tmp/localproxy && \
-              cd /tmp/localproxy && \
-              mkdir -p build && cd build && \
-              cmake .. -DLINK_STATIC_OPENSSL=OFF -DLOCALPROXY_DEP_MODE=fetch && \
-              make -j\$(nproc) && \
-              strip bin/localproxy && \
-              echo --- secure-tunnel binary --- && \
-              test -f /workspace/build/bin/aws-greengrass-secure-tunnel || { echo ERROR: aws-greengrass-secure-tunnel not found; exit 1; } && \
-              file /workspace/build/bin/aws-greengrass-secure-tunnel && \
-              echo --- localproxy binary --- && \
-              test -f /tmp/localproxy/build/bin/localproxy || { echo ERROR: localproxy not found; exit 1; } && \
-              file /tmp/localproxy/build/bin/localproxy && \
-              mkdir -p /workspace/staging && \
-              cp /workspace/build/bin/aws-greengrass-secure-tunnel /workspace/staging/ && \
-              cp /tmp/localproxy/build/bin/localproxy /workspace/staging/ && \
-              echo --- staged binaries --- && \
+              set -e
+              apt-get update
+              # 'file' is required by the binary verification below and is not in
+              # the arm32v7/ubuntu base image. The other architectures run on
+              # GitHub-hosted runners, where it is preinstalled.
+              apt-get install -y build-essential cmake pkg-config git curl zip libssl-dev zlib1g-dev file
+              cmake -B build -DCMAKE_BUILD_TYPE=MinSizeRel
+              make -C build -j\$(nproc)
+              strip build/bin/aws-greengrass-secure-tunnel
+              git clone --depth 1 --branch \"\$LOCALPROXY_REF\" \"\$LOCALPROXY_REPO\" /tmp/localproxy
+              cd /tmp/localproxy
+              mkdir -p build
+              cd build
+              cmake .. -DLINK_STATIC_OPENSSL=OFF -DLOCALPROXY_DEP_MODE=fetch
+              make -j\$(nproc)
+              strip bin/localproxy
+              echo --- secure-tunnel binary ---
+              test -f /workspace/build/bin/aws-greengrass-secure-tunnel || { echo ERROR: aws-greengrass-secure-tunnel not found; exit 1; }
+              file /workspace/build/bin/aws-greengrass-secure-tunnel
+              echo --- localproxy binary ---
+              test -f /tmp/localproxy/build/bin/localproxy || { echo ERROR: localproxy not found; exit 1; }
+              file /tmp/localproxy/build/bin/localproxy
+              mkdir -p /workspace/staging
+              cp /workspace/build/bin/aws-greengrass-secure-tunnel /workspace/staging/
+              cp /tmp/localproxy/build/bin/localproxy /workspace/staging/
+              echo --- staged binaries ---
               ls -l /workspace/staging
             "
 
