@@ -29,11 +29,11 @@ Manifests:
     Lifecycle:
       run:
         Script:
-          "{artifacts:decompressedPath}/GreengrassSecureTunnelingComponent-x86_64/aws-greengrass-secure-tunnel
+          "{artifacts:decompressedPath}/GreengrassV2SecureTunnelingComponent-x86_64/aws-greengrass-secure-tunnel
           --thing-name {iot:thingName} --max-tunnels
           {configuration:/maxConcurrentTunnels} --timeout
           {configuration:/tunnelTimeoutSeconds} --artifact-path
-          {artifacts:decompressedPath}/GreengrassSecureTunnelingComponent-x86_64/"
+          {artifacts:decompressedPath}/GreengrassV2SecureTunnelingComponent-x86_64/"
     Artifacts:
       - Uri: "s3://BUCKET_NAME/COMPONENT_NAME/COMPONENT_VERSION/GreengrassV2SecureTunnelingComponent-x86_64.zip"
         Unarchive: "ZIP"
@@ -47,13 +47,13 @@ Manifests:
     Lifecycle:
       run:
         Script:
-          "{artifacts:decompressedPath}/GreengrassV2SecureTunnelingComponent-arm64/aws-greengrass-secure-tunnel
+          "{artifacts:decompressedPath}/GreengrassV2SecureTunnelingComponent-aarch64/aws-greengrass-secure-tunnel
           --thing-name {iot:thingName} --max-tunnels
           {configuration:/maxConcurrentTunnels} --timeout
           {configuration:/tunnelTimeoutSeconds} --artifact-path
-          {artifacts:decompressedPath}/GreengrassV2SecureTunnelingComponent-arm64/"
+          {artifacts:decompressedPath}/GreengrassV2SecureTunnelingComponent-aarch64/"
     Artifacts:
-      - Uri: "s3://BUCKET_NAME/COMPONENT_NAME/COMPONENT_VERSION/GreengrassV2SecureTunnelingComponent-arm64.zip"
+      - Uri: "s3://BUCKET_NAME/COMPONENT_NAME/COMPONENT_VERSION/GreengrassV2SecureTunnelingComponent-aarch64.zip"
         Unarchive: "ZIP"
         Permission:
           Read: "OWNER"
@@ -85,13 +85,13 @@ Manifests:
     Lifecycle:
       run:
         Script:
-          "{artifacts:decompressedPath}/GreengrassV2SecureTunnelingComponent-arm64/aws-greengrass-secure-tunnel
+          "{artifacts:decompressedPath}/GreengrassV2SecureTunnelingComponent-aarch64/aws-greengrass-secure-tunnel
           --thing-name {iot:thingName} --max-tunnels
           {configuration:/maxConcurrentTunnels} --timeout
           {configuration:/tunnelTimeoutSeconds} --artifact-path
-          {artifacts:decompressedPath}/GreengrassV2SecureTunnelingComponent-arm64/"
+          {artifacts:decompressedPath}/GreengrassV2SecureTunnelingComponent-aarch64/"
     Artifacts:
-      - Uri: "s3://BUCKET_NAME/COMPONENT_NAME/COMPONENT_VERSION/GreengrassV2SecureTunnelingComponent-arm64.zip"
+      - Uri: "s3://BUCKET_NAME/COMPONENT_NAME/COMPONENT_VERSION/GreengrassV2SecureTunnelingComponent-aarch64.zip"
         Unarchive: "ZIP"
         Permission:
           Read: "OWNER"
