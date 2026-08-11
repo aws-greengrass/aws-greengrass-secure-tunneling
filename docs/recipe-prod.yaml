@@ -80,6 +80,25 @@ Manifests:
   - Platform:
       os: "linux"
       runtime: "*"
+      architecture: "arm"
+      architecture.detail: "aarch64"
+    Lifecycle:
+      run:
+        Script:
+          "{artifacts:decompressedPath}/GreengrassV2SecureTunnelingComponent-armv7l/aws-greengrass-secure-tunnel
+          --thing-name {iot:thingName} --max-tunnels
+          {configuration:/maxConcurrentTunnels} --timeout
+          {configuration:/tunnelTimeoutSeconds} --artifact-path
+          {artifacts:decompressedPath}/GreengrassV2SecureTunnelingComponent-armv7l/"
+    Artifacts:
+      - Uri: "s3://BUCKET_NAME/COMPONENT_NAME/COMPONENT_VERSION/GreengrassV2SecureTunnelingComponent-armv7l.zip"
+        Unarchive: "ZIP"
+        Permission:
+          Read: "OWNER"
+          Execute: "OWNER"
+  - Platform:
+      os: "linux"
+      runtime: "*"
       architecture: "aarch64"
       architecture.detail: "armv8l"
     Lifecycle:
