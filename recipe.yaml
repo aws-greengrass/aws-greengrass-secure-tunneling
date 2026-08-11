@@ -26,9 +26,9 @@ Manifests:
       runtime: "*"
     Lifecycle:
       run: |
-        {artifacts:decompressedPath}/aws.greengrass.SecureTunneling/aws-greengrass-secure-tunnel --thing-name {iot:thingName} --max-tunnels {configuration:/maxConcurrentTunnels} --timeout {configuration:/tunnelTimeoutSeconds} --artifact-path {artifacts:decompressedPath}/aws.greengrass.SecureTunneling/
+        {artifacts:decompressedPath}/GreengrassV2SecureTunnelingComponent-{COMPONENT_ARCH}/aws-greengrass-secure-tunnel --thing-name {iot:thingName} --max-tunnels {configuration:/maxConcurrentTunnels} --timeout {configuration:/tunnelTimeoutSeconds} --artifact-path {artifacts:decompressedPath}/GreengrassV2SecureTunnelingComponent-{COMPONENT_ARCH}/
     Artifacts:
-      - URI: "s3://BUCKET_NAME/COMPONENT_NAME/COMPONENT_VERSION/aws.greengrass.SecureTunneling.zip"
+      - URI: "s3://BUCKET_NAME/COMPONENT_NAME/COMPONENT_VERSION/GreengrassV2SecureTunnelingComponent-{COMPONENT_ARCH}.zip"
         Unarchive: "ZIP"
         Permission:
           Read: "OWNER"
