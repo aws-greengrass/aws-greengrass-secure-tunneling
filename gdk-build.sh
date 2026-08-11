@@ -29,6 +29,17 @@ fi
 # Get version
 VERSION=$(cat version | tr -d '\n')
 
+# Bundle name must match the artifact URI and {artifacts:decompressedPath}
+# directory in recipe.yaml: Greengrass extracts <name>.zip into a directory
+# called <name>. The published artifacts use uname -m labels verbatim, so
+# ARCH is just validated rather than mapped. It also feeds the
+# {COMPONENT_ARCH} substitution below, keeping the recipe and zip in sync.
+case "$(uname -m)" in
+  x86_64 | aarch64 | armv7l) ARCH="$(uname -m)" ;;
+  *) echo "ERROR: unsupported architecture $(uname -m)" >&2; exit 1 ;;
+esac
+BUNDLE_NAME="GreengrassV2SecureTunnelingComponent-${ARCH}"
+
 # ---------------------------------------------------------------------------
 # Guard: component binary must already exist.
 # It is built by the cmake+make step in gdk-config.json's custom_build_command,
@@ -97,20 +108,21 @@ cp run/localproxy greengrass-build/artifacts/aws.greengrass.SecureTunneling/NEXT
 
 # Create zip
 cd greengrass-build/artifacts/aws.greengrass.SecureTunneling/NEXT_PATCH
-zip aws.greengrass.SecureTunneling.zip aws-greengrass-secure-tunnel localproxy
+zip "${BUNDLE_NAME}.zip" aws-greengrass-secure-tunnel localproxy
 rm aws-greengrass-secure-tunnel localproxy
 cd ../../../..
 
 # Log bundle contents
 echo "localproxy ref: ${LOCALPROXY_REF}${LOCALPROXY_RESOLVED:+ (${LOCALPROXY_RESOLVED})}"
-unzip -l greengrass-build/artifacts/aws.greengrass.SecureTunneling/NEXT_PATCH/aws.greengrass.SecureTunneling.zip
+unzip -l "greengrass-build/artifacts/aws.greengrass.SecureTunneling/NEXT_PATCH/${BUNDLE_NAME}.zip"
 
 # Generate recipe
 sed -e "s/{COMPONENT_NAME}/aws.greengrass.SecureTunneling/g" \
     -e "s/{COMPONENT_VERSION}/$VERSION/g" \
+    -e "s/{COMPONENT_ARCH}/$ARCH/g" \
     -e "s|BUCKET_NAME|$(jq -r '.component."aws.greengrass.SecureTunneling".publish.bucket' gdk-config.json)|g" \
     -e "s|COMPONENT_NAME|aws.greengrass.SecureTunneling|g" \
     -e "s|COMPONENT_VERSION|$VERSION|g" \
     recipe.yaml > greengrass-build/recipes/recipe.yaml
 
-echo "Build complete: greengrass-build/artifacts/aws.greengrass.SecureTunneling/NEXT_PATCH/aws.greengrass.SecureTunneling.zip"
+echo "Build complete: greengrass-build/artifacts/aws.greengrass.SecureTunneling/NEXT_PATCH/${BUNDLE_NAME}.zip"
