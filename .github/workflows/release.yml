@@ -11,6 +11,10 @@ on:
           build (e.g. v3.3.0)"
         required: true
         type: string
+  # TEMPORARY: exercise the release pipeline on pull requests while the
+  # packaging fixes are validated. Drop this commit before merging; it makes
+  # every PR push run a ~37 minute emulated armv7l build.
+  pull_request:
 
 permissions:
   contents: read
@@ -33,7 +37,9 @@ jobs:
             runner: ubuntu-22.04-arm
 
     env:
-      LOCALPROXY_REF: ${{ inputs.localproxy_ref }}
+      # TEMPORARY: pull_request runs carry no dispatch input, so fall back to
+      # the current localproxy release. Dropped with the pull_request trigger.
+      LOCALPROXY_REF: ${{ inputs.localproxy_ref || 'v3.3.1' }}
 
     steps:
       - name: Validate localproxy ref
@@ -114,7 +120,9 @@ jobs:
     timeout-minutes: 360
 
     env:
-      LOCALPROXY_REF: ${{ inputs.localproxy_ref }}
+      # TEMPORARY: pull_request runs carry no dispatch input, so fall back to
+      # the current localproxy release. Dropped with the pull_request trigger.
+      LOCALPROXY_REF: ${{ inputs.localproxy_ref || 'v3.3.1' }}
 
     steps:
       - name: Validate localproxy ref
