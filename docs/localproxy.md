@@ -14,7 +14,7 @@ binaries with the repo's
 
 The following commands assume you're building on the same architecture as your
 target device. For cross-compilation, see the
-[localproxy README](https://github.com/aws-samples/aws-iot-securetunneling-localproxy/blob/feb59e268c8f4f1c7450f3a510963e84cc397ac7/README.md).
+[localproxy README](https://github.com/aws-greengrass/aws-greengrass-secure-tunneling).
 
 ### Install Dependencies
 

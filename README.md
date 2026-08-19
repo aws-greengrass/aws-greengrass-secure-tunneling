@@ -86,9 +86,12 @@ reference the following sample CI/CD workflow files:
 - **Secure tunnel component**:
   [`.github/workflows/release.yml`](https://github.com/aws-greengrass/aws-greengrass-secure-tunneling/blob/main/.github/workflows/release.yml)
   in the `aws-greengrass-secure-tunneling` repository.
-- **Local proxy**:
-  [`.github/workflows/build-and-test.yml`](https://github.com/aws-samples/aws-iot-securetunneling-localproxy/blob/main/.github/workflows/build-and-test.yml)
-  in the `aws-iot-securetunneling-localproxy` repository.
+
+**NOTE: This workflow only supports localproxy release version later than
+3.3.0.**
+
+The release workflow should always support the oldest currently supported LTS
+release to ensure maximum device compatibility while meeting security standards.
 
 If you need to build the localproxy binary for a different target architecture,
 see the
