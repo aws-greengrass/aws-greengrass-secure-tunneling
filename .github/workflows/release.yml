@@ -8,7 +8,7 @@ on:
       localproxy_ref:
         description:
           "Release tag of aws-samples/aws-iot-securetunneling-localproxy to
-          build (e.g. v3.3.0)"
+          build (must be >v3.3.0)"
         required: true
         type: string
 
