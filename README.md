@@ -7,6 +7,8 @@ This component listens for tunnel notifications and automatically establishes
 secure tunnels using the localproxy client, supporting services like SSH and
 VNC.
 
+For the component's architecture and internals, see [DESIGN.md](docs/DESIGN.md).
+
 ## Quick Start
 
 Please check the release build under
