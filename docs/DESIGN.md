@@ -20,7 +20,7 @@ that:
 - Eliminates the need for inbound firewall rule configuration
 - Works with devices behind NAT and firewalls using only outbound connections
 
-![SHH_before_setup](docs/Images/SHH_before_setup.jpg)
+![SHH_before_setup](Images/SHH_before_setup.jpg)
 
 To use AWS IoT Secure Tunneling, devices need:
 
@@ -40,7 +40,7 @@ using the previously offered Greengrass Secure Tunneling component.
 
 ### High-Level Architecture
 
-![SHH_after_setup](docs/Images/SHH_after_setup.jpg)
+![SHH_after_setup](Images/SHH_after_setup.jpg)
 
 ### Component Architecture
 
@@ -142,9 +142,9 @@ for the first release only SSH (22) and VNC (5900) will be supported.
 
 - CMake-based build system with multi-platform support
 - Unity/CMock testing framework
-- See [BUILD.md](docs/BUILD.md) and [RunningTests.md](docs/RunningTests.md)
+- See [BUILD.md](BUILD.md) and [test/README.md](../test/README.md)
 
 ## Deployment
 
 Packaged as Greengrass v2 component with S3 artifact distribution. See
-[deployment.md](docs/deployment.md) for setup instructions.
+[deployment.md](deployment.md) for setup instructions.
