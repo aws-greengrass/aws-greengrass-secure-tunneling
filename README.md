@@ -92,6 +92,8 @@ reference the following sample CI/CD workflow files:
 **NOTE: This workflow only supports localproxy release version later than
 3.3.0.**
 
+For the full release process, see [RELEASE.md](docs/RELEASE.md).
+
 The release workflow should always support the oldest currently supported LTS
 release to ensure maximum device compatibility while meeting security standards.
 
