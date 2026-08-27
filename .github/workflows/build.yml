@@ -60,32 +60,66 @@ jobs:
 
   build-armv7:
     name: Build armv7
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v4
-
       - name: Set version
         id: version
         run: echo "VERSION=$(cat version)" >> $GITHUB_OUTPUT
 
-      - name: Build in container
+      - name: Install armhf cross toolchain and multiarch sysroot
         run: |
-          docker run --rm --platform=linux/arm/v7 \
-            -v $PWD:/workspace \
-            -w /workspace \
-            arm32v7/ubuntu:22.04 \
-            bash -c "
-              apt-get update && \
-              apt-get install -y build-essential cmake pkg-config git libssl-dev && \
-              cmake -B build -DCMAKE_BUILD_TYPE=MinSizeRel && \
-              make -C build -j\$(nproc) && \
-              strip build/bin/aws-greengrass-secure-tunnel
-            "
+          sudo dpkg --add-architecture armhf
+          # The runner's sources use "deb mirror+file:...", not an http URL, so match any
+          # scheme: left unscoped, armhf 404s on the amd64-only mirrors and apt fails.
+          for f in /etc/apt/sources.list /etc/apt/sources.list.d/*.list; do
+            [ -e "$f" ] || continue
+            sudo sed -i -E '/^deb .*arch=/! { s|^deb \[([^]]*)\] (\S+)|deb [arch=amd64 \1] \2|; t; s|^deb (\S+)|deb [arch=amd64] \1|; }' "$f"
+          done
+          # armhf is served from ports.ubuntu.com, not archive.ubuntu.com.
+          sudo tee /etc/apt/sources.list.d/armhf-ports.list >/dev/null <<'PORTS'
+          deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports/ jammy main restricted universe multiverse
+          deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports/ jammy-updates main restricted universe multiverse
+          deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports/ jammy-security main restricted universe multiverse
+          PORTS
+          sudo apt-get update
+          sudo apt-get install -y crossbuild-essential-armhf cmake pkg-config git libssl-dev:armhf
+
+      - name: Write armhf multiarch toolchain file
+        run: |
+          cat > /tmp/armhf-multiarch.cmake <<'TOOLCHAIN'
+          set(CMAKE_SYSTEM_NAME      Linux)
+          set(CMAKE_SYSTEM_PROCESSOR arm)
+
+          set(CMAKE_C_COMPILER   arm-linux-gnueabihf-gcc)
+          set(CMAKE_CXX_COMPILER arm-linux-gnueabihf-g++)
+
+          # No CMAKE_SYSROOT: multiarch puts armhf under the host root, and the cross gcc's
+          # auto-detected CMAKE_LIBRARY_ARCHITECTURE steers find_package(OpenSSL) to it.
+
+          # BOTH, not ONLY: there is no sysroot tree, so ONLY would hide /usr/include.
+          set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+          set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY BOTH)
+          set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE BOTH)
+          set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE BOTH)
+
+          set(ENV{PKG_CONFIG_LIBDIR} /usr/lib/arm-linux-gnueabihf/pkgconfig:/usr/share/pkgconfig)
+          TOOLCHAIN
+
+      - name: Build
+        run: |
+          cmake -B build -DCMAKE_TOOLCHAIN_FILE=/tmp/armhf-multiarch.cmake -DCMAKE_BUILD_TYPE=MinSizeRel
+          make -C build -j$(nproc)
+          arm-linux-gnueabihf-strip build/bin/aws-greengrass-secure-tunnel
+
+      - name: Verify binary is 32-bit ARM
+        # Stops a silent host-native build from passing CI.
+        run: |
+          file build/bin/aws-greengrass-secure-tunnel
+          file build/bin/aws-greengrass-secure-tunnel | grep -q "ELF 32-bit LSB.*ARM"
 
       - name: Save package
         run: |
