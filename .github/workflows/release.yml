@@ -111,7 +111,7 @@ jobs:
   package-armv7l:
     name: Package armv7l
     runs-on: ubuntu-22.04
-    timeout-minutes: 360
+    timeout-minutes: 120
 
     env:
       LOCALPROXY_REF: ${{ inputs.localproxy_ref }}
@@ -135,56 +135,105 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v4
-
       - name: Set version
         id: version
         run: echo "VERSION=$(cat version)" >> $GITHUB_OUTPUT
 
-      - name: Build in container
+      - name: Install armhf cross toolchain and multiarch sysroot
         run: |
-          docker run --rm --platform=linux/arm/v7 \
-            -v $PWD:/workspace \
-            -w /workspace \
-            -e LOCALPROXY_REF \
-            -e LOCALPROXY_REPO \
-            arm32v7/ubuntu:22.04 \
-            bash -c "
-              set -e
-              apt-get update
-              # 'file' is required by the binary verification below and is not in
-              # the arm32v7/ubuntu base image. The other architectures run on
-              # GitHub-hosted runners, where it is preinstalled.
-              apt-get install -y build-essential cmake pkg-config git curl zip libssl-dev zlib1g-dev file
-              cmake -B build -DCMAKE_BUILD_TYPE=MinSizeRel
-              make -C build -j\$(nproc)
-              strip build/bin/aws-greengrass-secure-tunnel
-              git clone --depth 1 --branch \"\$LOCALPROXY_REF\" \"\$LOCALPROXY_REPO\" /tmp/localproxy
-              cd /tmp/localproxy
-              mkdir -p build
-              cd build
-              cmake .. -DLINK_STATIC_OPENSSL=OFF -DLOCALPROXY_DEP_MODE=fetch
-              make -j\$(nproc)
-              strip bin/localproxy
-              echo --- secure-tunnel binary ---
-              test -f /workspace/build/bin/aws-greengrass-secure-tunnel || { echo ERROR: aws-greengrass-secure-tunnel not found; exit 1; }
-              file /workspace/build/bin/aws-greengrass-secure-tunnel
-              echo --- localproxy binary ---
-              test -f /tmp/localproxy/build/bin/localproxy || { echo ERROR: localproxy not found; exit 1; }
-              file /tmp/localproxy/build/bin/localproxy
-              mkdir -p /workspace/staging
-              cp /workspace/build/bin/aws-greengrass-secure-tunnel /workspace/staging/
-              cp /tmp/localproxy/build/bin/localproxy /workspace/staging/
-              echo --- staged binaries ---
-              ls -l /workspace/staging
-            "
+          sudo dpkg --add-architecture armhf
+          # The runner's sources use "deb mirror+file:...", not an http URL, so match any
+          # scheme: left unscoped, armhf 404s on the amd64-only mirrors and apt fails.
+          for f in /etc/apt/sources.list /etc/apt/sources.list.d/*.list; do
+            [ -e "$f" ] || continue
+            sudo sed -i -E '/^deb .*arch=/! { s|^deb \[([^]]*)\] (\S+)|deb [arch=amd64 \1] \2|; t; s|^deb (\S+)|deb [arch=amd64] \1|; }' "$f"
+          done
+          # armhf is served from ports.ubuntu.com, not archive.ubuntu.com.
+          sudo tee /etc/apt/sources.list.d/armhf-ports.list >/dev/null <<'PORTS'
+          deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports/ jammy main restricted universe multiverse
+          deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports/ jammy-updates main restricted universe multiverse
+          deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports/ jammy-security main restricted universe multiverse
+          PORTS
+          sudo apt-get update
+          sudo apt-get install -y crossbuild-essential-armhf cmake pkg-config git curl zip unzip libssl-dev:armhf zlib1g-dev:armhf
 
-      # The container runs as root and writes build/ and staging/ into the
-      # bind-mounted checkout, so hand ownership back to the runner user before
-      # upload-artifact reads them.
-      - name: Fix file ownership
-        run: sudo chown -R "$(id -u):$(id -g)" .
+      - name: Write armhf multiarch toolchain file
+        run: |
+          cat > /tmp/armhf-multiarch.cmake <<'TOOLCHAIN'
+          set(CMAKE_SYSTEM_NAME      Linux)
+          set(CMAKE_SYSTEM_PROCESSOR arm)
+
+          set(CMAKE_C_COMPILER   arm-linux-gnueabihf-gcc)
+          set(CMAKE_CXX_COMPILER arm-linux-gnueabihf-g++)
+
+          # No CMAKE_SYSROOT: multiarch puts armhf under the host root, and the cross gcc's
+          # auto-detected CMAKE_LIBRARY_ARCHITECTURE steers find_package(OpenSSL) to it.
+
+          # BOTH, not ONLY: there is no sysroot tree, so ONLY would hide /usr/include.
+          set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+          set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY BOTH)
+          set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE BOTH)
+          set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE BOTH)
+
+          set(ENV{PKG_CONFIG_LIBDIR} /usr/lib/arm-linux-gnueabihf/pkgconfig:/usr/share/pkgconfig)
+          TOOLCHAIN
+
+      - name: Build secure-tunnel
+        run: |
+          cmake -B build -DCMAKE_TOOLCHAIN_FILE=/tmp/armhf-multiarch.cmake -DCMAKE_BUILD_TYPE=MinSizeRel
+          make -C build -j$(nproc)
+          arm-linux-gnueabihf-strip build/bin/aws-greengrass-secure-tunnel
+
+      - name: Clone localproxy
+        run: |
+          # Clone outside this repo tree so file(GLOB_RECURSE src/*.c) in
+          # CMakeLists.txt never picks up localproxy sources.
+          git clone --depth 1 --branch "$LOCALPROXY_REF" "$LOCALPROXY_REPO" "$RUNNER_TEMP/localproxy"
+
+      # Generated .pb.h carries a PROTOBUF_MIN_PROTOC_VERSION guard, so a mismatched
+      # host protoc #errors at compile; pin it to localproxy's fc_deps.json version.
+      - name: Install host protoc matching localproxy fc_deps.json
+        run: |
+          VER=$(jq -r .protobuf.version "$RUNNER_TEMP/localproxy/fc_deps.json")
+          echo "Installing host protoc $VER"
+          curl -fsSL -o /tmp/protoc.zip \
+            "https://github.com/protocolbuffers/protobuf/releases/download/v$VER/protoc-$VER-linux-x86_64.zip"
+          # unzip drops the execute bit; restore it before the smoke test (else exit 126).
+          sudo unzip -o /tmp/protoc.zip -d /usr/local 'bin/protoc' 'include/*'
+          sudo chmod +x /usr/local/bin/protoc
+          protoc --version
+
+      # Cross builds default to system dep mode, so fetch must be explicit; and
+      # LOCALPROXY_PROTOC_EXECUTABLE is mandatory when cross-compiling.
+      - name: Cross-build localproxy
+        run: |
+          cd "$RUNNER_TEMP/localproxy"
+          mkdir -p build && cd build
+          cmake .. -DCMAKE_TOOLCHAIN_FILE=/tmp/armhf-multiarch.cmake -DLINK_STATIC_OPENSSL=OFF -DLOCALPROXY_DEP_MODE=fetch -DLOCALPROXY_PROTOC_EXECUTABLE=/usr/local/bin/protoc
+          make -j$(nproc)
+          arm-linux-gnueabihf-strip bin/localproxy
+
+      - name: Verify binaries
+        run: |
+          echo "--- secure-tunnel binary ---"
+          test -f build/bin/aws-greengrass-secure-tunnel || { echo "ERROR: aws-greengrass-secure-tunnel not found"; exit 1; }
+          file build/bin/aws-greengrass-secure-tunnel
+          file build/bin/aws-greengrass-secure-tunnel | grep -q 'ELF 32-bit LSB.*ARM'
+
+          echo "--- localproxy binary ---"
+          test -f "$RUNNER_TEMP/localproxy/build/bin/localproxy" || { echo "ERROR: localproxy not found"; exit 1; }
+          file "$RUNNER_TEMP/localproxy/build/bin/localproxy"
+          file "$RUNNER_TEMP/localproxy/build/bin/localproxy" | grep -q 'ELF 32-bit LSB.*ARM'
+
+      - name: Stage bundle contents
+        run: |
+          mkdir -p staging
+          #Stage binaries for zip creation
+          cp build/bin/aws-greengrass-secure-tunnel staging/
+          cp "$RUNNER_TEMP/localproxy/build/bin/localproxy" staging/
+
+          echo "--- staged binaries ---"
+          ls -l staging
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
