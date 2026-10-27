@@ -7,9 +7,9 @@
 
 #include "Mocksubscriptions.h"
 #include "secure-tunnel.h"
+#include <unity.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <unity.h>
 
 void test_run_secure_tunnel_success(void);
 void test_retry_succeeds_on_first_attempt_without_sleeping(void);
@@ -100,9 +100,7 @@ void test_retry_backoff_is_capped(void) {
     SecureTunnelConfig config = test_config();
 
     for (int i = 0; i < 7; i++) {
-        subscribe_to_aws_tunnel_tokens_ExpectAndReturn(
-            &config, GG_ERR_NOCONN
-        );
+        subscribe_to_aws_tunnel_tokens_ExpectAndReturn(&config, GG_ERR_NOCONN);
     }
     subscribe_to_aws_tunnel_tokens_ExpectAndReturn(&config, GG_ERR_OK);
 

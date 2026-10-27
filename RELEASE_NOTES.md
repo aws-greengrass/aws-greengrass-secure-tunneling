@@ -4,8 +4,8 @@
   doubling to 60 s) instead of exiting when it fails. Previously, starting the
   component while the nucleus was not yet connected to AWS IoT Core (right after
   boot, or during a network outage) made the IPC subscribe time out; the
-  component exited three times within about 30 seconds and the nucleus marked
-  it BROKEN until the next deployment. Configuration errors still fail fast.
+  component exited three times within about 30 seconds and the nucleus marked it
+  BROKEN until the next deployment. Configuration errors still fail fast.
 
 # Release Notes v2.0.2
 
