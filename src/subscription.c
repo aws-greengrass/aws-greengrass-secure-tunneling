@@ -19,6 +19,7 @@
 #include <gg/log.h>
 #include <gg/object.h>
 #include <gg/vector.h>
+#include <stdbool.h>
 #include <stdint.h>
 
 static void on_tunnel_notification(
@@ -75,11 +76,18 @@ GgError subscribe_to_aws_tunnel_tokens(const SecureTunnelConfig *config) {
         return ret;
     }
 
-    GG_LOGI("Connecting to Greengrass IPC");
-    ret = ggipc_connect();
-    if (ret != GG_ERR_OK) {
-        GG_LOGE("Failed to connect to Greengrass IPC: %d", ret);
-        return ret;
+    // ggipc_connect() may only succeed once per process (it asserts that no
+    // connection exists yet). A failed attempt leaves no connection behind,
+    // so connecting again on the next retry is safe.
+    static bool ipc_connected = false;
+    if (!ipc_connected) {
+        GG_LOGI("Connecting to Greengrass IPC");
+        ret = ggipc_connect();
+        if (ret != GG_ERR_OK) {
+            GG_LOGE("Failed to connect to Greengrass IPC: %d", ret);
+            return ret;
+        }
+        ipc_connected = true;
     }
 
     GG_LOGI(
