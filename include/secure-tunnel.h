@@ -13,7 +13,6 @@
 
 #include <gg/buffer.h>
 #include <gg/error.h>
-#include <stdint.h>
 
 typedef struct {
     GgBuffer thing_name;
@@ -23,20 +22,10 @@ typedef struct {
     int tunnel_timeout_seconds;
 } SecureTunnelConfig;
 
-// Sleep function used between subscription attempts (gg_sleep in production).
-typedef GgError (*SecureTunnelSleepFn)(int64_t seconds);
-
-// Subscribes to tunnel notifications, retrying until it succeeds.
-GgError run_secure_tunnel(const SecureTunnelConfig *config);
-
 // Subscribes to tunnel notifications. Transient failures, such as the nucleus
 // not being connected to AWS IoT Core yet (the IPC subscribe then times out),
-// are retried with exponential backoff. Configuration errors are not retried.
-// max_attempts == 0 retries forever.
-GgError run_secure_tunnel_with_retry(
-    const SecureTunnelConfig *config,
-    uint32_t max_attempts,
-    SecureTunnelSleepFn sleep_fn
-);
+// are retried with exponential backoff until the subscription succeeds.
+// Configuration errors are not retried.
+GgError run_secure_tunnel(const SecureTunnelConfig *config);
 
 #endif // ST_SECURE_TUNNEL_H

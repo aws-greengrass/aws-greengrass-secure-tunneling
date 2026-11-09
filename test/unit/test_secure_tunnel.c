@@ -7,39 +7,60 @@
 
 #include "Mocksubscriptions.h"
 #include "secure-tunnel.h"
+#include <gg/backoff.h>
+#include <gg/error.h>
 #include <unity.h>
 #include <stddef.h>
 #include <stdint.h>
 
+// Prototypes are required by -Wmissing-prototypes, as in the other unit tests.
 void test_run_secure_tunnel_success(void);
-void test_retry_succeeds_on_first_attempt_without_sleeping(void);
+void test_retry_backs_off_between_5s_and_60s(void);
 void test_retry_recovers_after_transient_timeouts(void);
-void test_retry_backoff_is_capped(void);
-void test_retry_gives_up_after_max_attempts(void);
+void test_retry_keeps_going_while_nucleus_is_offline(void);
 void test_retry_does_not_retry_config_errors(void);
 void test_retry_does_not_retry_invalid_thing_name(void);
 
-#define MAX_RECORDED_SLEEPS 16
+// Number of consecutive failures the fake backoff tolerates before giving up,
+// so that a bug in the retry loop fails the test instead of hanging it.
+#define MAX_FAKE_RETRIES 16
 
-static int64_t recorded_sleeps[MAX_RECORDED_SLEEPS];
-static size_t recorded_sleep_count;
+// How many times the nucleus reports no connection before the subscription
+// goes through in test_retry_keeps_going_while_nucleus_is_offline.
+#define OFFLINE_ATTEMPTS 6
 
-// Backoff starts at 5 s, doubles, and is capped at 60 s.
-static const int EXPECTED_DELAYS_S[] = { 5, 10, 20, 40, 60, 60, 60 };
+static uint32_t backoff_base_ms;
+static uint32_t backoff_max_ms;
+static uint32_t backoff_max_attempts;
+static size_t backoff_sleep_count;
 
-static void assert_recorded_delays(size_t count) {
-    TEST_ASSERT_EQUAL_size_t(count, recorded_sleep_count);
-    for (size_t i = 0; i < count; i++) {
-        TEST_ASSERT_EQUAL_INT(EXPECTED_DELAYS_S[i], (int) recorded_sleeps[i]);
+// Stands in for the SDK's gg_backoff(): same retry contract, but it records
+// the parameters and counts the sleeps instead of sleeping. The test binary's
+// definition takes precedence over the one in the gg-sdk library.
+GgError gg_backoff(
+    uint32_t base_ms,
+    uint32_t max_ms,
+    uint32_t max_attempts,
+    GgError (*fn)(void *ctx),
+    void *ctx
+) {
+    backoff_base_ms = base_ms;
+    backoff_max_ms = max_ms;
+    backoff_max_attempts = max_attempts;
+
+    for (uint32_t attempt = 1;; attempt++) {
+        GgError ret = fn(ctx);
+        if (ret == GG_ERR_OK) {
+            return GG_ERR_OK;
+        }
+        if ((max_attempts != 0) && (attempt >= max_attempts)) {
+            return ret;
+        }
+        TEST_ASSERT_TRUE_MESSAGE(
+            backoff_sleep_count < MAX_FAKE_RETRIES, "too many retries"
+        );
+        backoff_sleep_count++;
     }
-}
-
-static GgError fake_sleep(int64_t seconds) {
-    TEST_ASSERT_TRUE_MESSAGE(
-        recorded_sleep_count < MAX_RECORDED_SLEEPS, "too many sleeps"
-    );
-    recorded_sleeps[recorded_sleep_count++] = seconds;
-    return GG_ERR_OK;
 }
 
 static SecureTunnelConfig test_config(void) {
@@ -52,7 +73,10 @@ static SecureTunnelConfig test_config(void) {
 
 void setUp(void) {
     Mocksubscriptions_Init();
-    recorded_sleep_count = 0;
+    backoff_base_ms = 0;
+    backoff_max_ms = 0;
+    backoff_max_attempts = 0;
+    backoff_sleep_count = 0;
 }
 
 void tearDown(void) {
@@ -68,17 +92,20 @@ void test_run_secure_tunnel_success(void) {
     GgError ret = run_secure_tunnel(&config);
 
     TEST_ASSERT_EQUAL(GG_ERR_OK, ret);
+    TEST_ASSERT_EQUAL_size_t(0, backoff_sleep_count);
 }
 
-void test_retry_succeeds_on_first_attempt_without_sleeping(void) {
+void test_retry_backs_off_between_5s_and_60s(void) {
     SecureTunnelConfig config = test_config();
 
     subscribe_to_aws_tunnel_tokens_ExpectAndReturn(&config, GG_ERR_OK);
 
-    GgError ret = run_secure_tunnel_with_retry(&config, 0, fake_sleep);
+    (void) run_secure_tunnel(&config);
 
-    TEST_ASSERT_EQUAL(GG_ERR_OK, ret);
-    TEST_ASSERT_EQUAL_size_t(0, recorded_sleep_count);
+    TEST_ASSERT_EQUAL_UINT32(5000, backoff_base_ms);
+    TEST_ASSERT_EQUAL_UINT32(60000, backoff_max_ms);
+    // 0 means gg_backoff() retries indefinitely.
+    TEST_ASSERT_EQUAL_UINT32(0, backoff_max_attempts);
 }
 
 // The nucleus is not connected to AWS IoT Core yet (e.g. right after boot), so
@@ -90,37 +117,24 @@ void test_retry_recovers_after_transient_timeouts(void) {
     subscribe_to_aws_tunnel_tokens_ExpectAndReturn(&config, GG_ERR_TIMEOUT);
     subscribe_to_aws_tunnel_tokens_ExpectAndReturn(&config, GG_ERR_OK);
 
-    GgError ret = run_secure_tunnel_with_retry(&config, 0, fake_sleep);
+    GgError ret = run_secure_tunnel(&config);
 
     TEST_ASSERT_EQUAL(GG_ERR_OK, ret);
-    assert_recorded_delays(2);
+    TEST_ASSERT_EQUAL_size_t(2, backoff_sleep_count);
 }
 
-void test_retry_backoff_is_capped(void) {
+void test_retry_keeps_going_while_nucleus_is_offline(void) {
     SecureTunnelConfig config = test_config();
 
-    for (int i = 0; i < 7; i++) {
+    for (int i = 0; i < OFFLINE_ATTEMPTS; i++) {
         subscribe_to_aws_tunnel_tokens_ExpectAndReturn(&config, GG_ERR_NOCONN);
     }
     subscribe_to_aws_tunnel_tokens_ExpectAndReturn(&config, GG_ERR_OK);
 
-    GgError ret = run_secure_tunnel_with_retry(&config, 0, fake_sleep);
+    GgError ret = run_secure_tunnel(&config);
 
     TEST_ASSERT_EQUAL(GG_ERR_OK, ret);
-    assert_recorded_delays(7);
-}
-
-void test_retry_gives_up_after_max_attempts(void) {
-    SecureTunnelConfig config = test_config();
-
-    subscribe_to_aws_tunnel_tokens_ExpectAndReturn(&config, GG_ERR_TIMEOUT);
-    subscribe_to_aws_tunnel_tokens_ExpectAndReturn(&config, GG_ERR_TIMEOUT);
-    subscribe_to_aws_tunnel_tokens_ExpectAndReturn(&config, GG_ERR_TIMEOUT);
-
-    GgError ret = run_secure_tunnel_with_retry(&config, 3, fake_sleep);
-
-    TEST_ASSERT_EQUAL(GG_ERR_FAILURE, ret);
-    assert_recorded_delays(2);
+    TEST_ASSERT_EQUAL_size_t(OFFLINE_ATTEMPTS, backoff_sleep_count);
 }
 
 // Missing SVCUID / socket path: retrying cannot help, so fail fast and let the
@@ -130,10 +144,10 @@ void test_retry_does_not_retry_config_errors(void) {
 
     subscribe_to_aws_tunnel_tokens_ExpectAndReturn(&config, GG_ERR_CONFIG);
 
-    GgError ret = run_secure_tunnel_with_retry(&config, 0, fake_sleep);
+    GgError ret = run_secure_tunnel(&config);
 
     TEST_ASSERT_EQUAL(GG_ERR_FAILURE, ret);
-    TEST_ASSERT_EQUAL_size_t(0, recorded_sleep_count);
+    TEST_ASSERT_EQUAL_size_t(0, backoff_sleep_count);
 }
 
 void test_retry_does_not_retry_invalid_thing_name(void) {
@@ -141,20 +155,19 @@ void test_retry_does_not_retry_invalid_thing_name(void) {
 
     subscribe_to_aws_tunnel_tokens_ExpectAndReturn(&config, GG_ERR_INVALID);
 
-    GgError ret = run_secure_tunnel_with_retry(&config, 0, fake_sleep);
+    GgError ret = run_secure_tunnel(&config);
 
     TEST_ASSERT_EQUAL(GG_ERR_FAILURE, ret);
-    TEST_ASSERT_EQUAL_size_t(0, recorded_sleep_count);
+    TEST_ASSERT_EQUAL_size_t(0, backoff_sleep_count);
 }
 
 int main(void) {
     UNITY_BEGIN();
 
     RUN_TEST(test_run_secure_tunnel_success);
-    RUN_TEST(test_retry_succeeds_on_first_attempt_without_sleeping);
+    RUN_TEST(test_retry_backs_off_between_5s_and_60s);
     RUN_TEST(test_retry_recovers_after_transient_timeouts);
-    RUN_TEST(test_retry_backoff_is_capped);
-    RUN_TEST(test_retry_gives_up_after_max_attempts);
+    RUN_TEST(test_retry_keeps_going_while_nucleus_is_offline);
     RUN_TEST(test_retry_does_not_retry_config_errors);
     RUN_TEST(test_retry_does_not_retry_invalid_thing_name);
 
