@@ -22,7 +22,10 @@ typedef struct {
     int tunnel_timeout_seconds;
 } SecureTunnelConfig;
 
-// Function declarations
+// Subscribes to tunnel notifications. Transient failures, such as the nucleus
+// not being connected to AWS IoT Core yet (the IPC subscribe then times out),
+// are retried with exponential backoff until the subscription succeeds.
+// Configuration errors are not retried.
 GgError run_secure_tunnel(const SecureTunnelConfig *config);
 
 #endif // ST_SECURE_TUNNEL_H
